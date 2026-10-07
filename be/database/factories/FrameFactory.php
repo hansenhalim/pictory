@@ -25,6 +25,7 @@ class FrameFactory extends Factory
                 [['x' => 29, 'y' => 440, 'width' => 600, 'height' => 400]],
                 [['x' => 29, 'y' => 840, 'width' => 600, 'height' => 400]],
             ],
+            'cut' => false,
         ];
     }
 
@@ -52,6 +53,7 @@ class FrameFactory extends Factory
                 [['x' => 29, 'y' => 440, 'width' => 600, 'height' => 400], ['x' => 629, 'y' => 440, 'width' => 600, 'height' => 400]],
                 [['x' => 29, 'y' => 840, 'width' => 600, 'height' => 400], ['x' => 629, 'y' => 840, 'width' => 600, 'height' => 400]],
             ],
+            'cut' => true,
         ]);
     }
 }

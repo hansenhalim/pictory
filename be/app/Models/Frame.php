@@ -10,11 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property list<list<array{x: int, y: int, width: int, height: int}>> $slots One entry per photo, each listing every placement of that photo on the paper.
  * @property list<array{x: int, y: int, size: int}> $qr_codes Every placement of the QR code on the paper; empty when the frame has none.
+ * @property bool $cut Whether the 4R print is cut in half into two 2R strips.
  *
  * A QR code is drawn on top of the frame as a white square of `size` pixels, including a
  * 4-module quiet zone around black modules encoded with error correction level Q.
  */
-#[Fillable(['file_path', 'slots', 'qr_codes'])]
+#[Fillable(['file_path', 'slots', 'qr_codes', 'cut'])]
 class Frame extends Model
 {
     /** @use HasFactory<FrameFactory> */
@@ -39,6 +40,7 @@ class Frame extends Model
         return [
             'slots' => 'array',
             'qr_codes' => 'array',
+            'cut' => 'boolean',
         ];
     }
 }

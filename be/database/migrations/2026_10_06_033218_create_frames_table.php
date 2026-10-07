@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('file_path');
             $table->json('slots');
             $table->json('qr_codes');
+            $table->boolean('cut')->default(false);
             $table->timestamps();
         });
     }

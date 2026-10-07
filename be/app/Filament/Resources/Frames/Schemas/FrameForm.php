@@ -38,6 +38,11 @@ class FrameForm
                         ->directory('frames')
                         ->required()
                         ->columnSpanFull(),
+                    Toggle::make('cut')
+                        ->label('Cut in half')
+                        ->helperText('Print on 4R and cut it into two 2R strips.')
+                        ->default(false)
+                        ->columnSpanFull(),
                     Toggle::make('slots_as_json')
                         ->label('Advanced Mode')
                         ->live()
