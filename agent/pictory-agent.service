@@ -1,0 +1,26 @@
+# systemd unit for the kiosk's print agent. Install with:
+#
+#   sudo install -m 755 dist/pictory-agent /usr/local/bin/
+#   sudo install -m 644 pictory-agent.service /etc/systemd/system/
+#   sudo systemctl enable --now pictory-agent
+#
+# Chrome asks for Local Network Access permission the first time https://pictory.id calls
+# the agent on 127.0.0.1. Accept it once from the kiosk's Settings > Test printer, or
+# pre-grant it with a managed policy, e.g. /etc/chromium/policies/managed/pictory.json:
+#
+#   { "LocalNetworkAccessAllowedForUrls": ["https://pictory.id"] }
+
+[Unit]
+Description=Pictory print agent
+After=network.target cups.service
+Wants=cups.service
+
+[Service]
+ExecStart=/usr/local/bin/pictory-agent -printer DS-RX1 -origins https://pictory.id
+Restart=always
+RestartSec=2
+DynamicUser=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
