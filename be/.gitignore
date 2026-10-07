@@ -18,6 +18,7 @@
 /public/fonts/filament
 /public/hot
 /public/js/filament
+/public/kiosk
 /public/storage
 /storage/*.key
 /storage/pail

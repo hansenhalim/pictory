@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable(['file_path', 'ref'])]
 class Paper extends Model
@@ -22,5 +23,15 @@ class Paper extends Model
     public function photos(): HasMany
     {
         return $this->hasMany(Photo::class, 'ref', 'ref');
+    }
+
+    /**
+     * Get the short code printed on this paper, if it had one.
+     *
+     * @return HasOne<ShortCode, $this>
+     */
+    public function shortCode(): HasOne
+    {
+        return $this->hasOne(ShortCode::class);
     }
 }
