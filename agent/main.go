@@ -9,8 +9,8 @@
 //	GET  /health  reports whether the printer is known to CUPS
 //	POST /print   multipart: paper (PNG), copies (1-20), cut (bool)
 //
-// It listens on loopback only and refuses requests from origins outside -origins, since
-// any web page can send a form POST to localhost.
+// It listens on loopback only. Any origin may print by default; pass -origins to accept
+// only the listed ones, since any web page can send a form POST to localhost.
 //
 // Build for the kiosk with:
 //
@@ -55,7 +55,7 @@ type server struct {
 func main() {
 	addr := flag.String("addr", env("PICTORY_AGENT_ADDR", "127.0.0.1:8001"), "address to listen on")
 	printer := flag.String("printer", env("PICTORY_AGENT_PRINTER", "DS-RX1"), "CUPS printer name")
-	origins := flag.String("origins", env("PICTORY_AGENT_ORIGINS", "https://pictory.id"), "comma-separated origins allowed to print")
+	origins := flag.String("origins", env("PICTORY_AGENT_ORIGINS", "*"), "comma-separated origins allowed to print, or * for any")
 	dryRun := flag.Bool("dry-run", os.Getenv("PICTORY_AGENT_DRY_RUN") == "true", "log lp commands instead of running them")
 	flag.Parse()
 
@@ -90,8 +90,8 @@ func main() {
 	}
 }
 
-// cors lets the configured kiosk origins call the agent, and rejects every other origin
-// outright: a cross-origin form POST runs even when the browser hides the response.
+// cors lets the allowed origins call the agent, and rejects every other origin outright:
+// a cross-origin form POST runs even when the browser hides the response.
 func (s *server) cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
@@ -101,7 +101,7 @@ func (s *server) cors(next http.Handler) http.Handler {
 			return
 		}
 
-		if !s.origins[origin] {
+		if !s.origins["*"] && !s.origins[origin] {
 			writeError(w, http.StatusForbidden, "origin not allowed")
 			return
 		}

@@ -16,7 +16,7 @@ After=network.target cups.service
 Wants=cups.service
 
 [Service]
-ExecStart=/usr/local/bin/pictory-agent -printer DS-RX1 -origins https://pictory.id
+ExecStart=/usr/local/bin/pictory-agent -printer DS-RX1
 Restart=always
 RestartSec=2
 DynamicUser=yes
