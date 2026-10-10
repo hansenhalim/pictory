@@ -4,11 +4,13 @@ import { RouterLink, useRouter } from 'vue-router'
 import { copy } from '@/copy'
 import { useFramesStore } from '@/stores/frames'
 import { useSessionStore } from '@/stores/session'
+import { useUploadsStore } from '@/stores/uploads'
 import type { Frame } from '@/types'
 
 const router = useRouter()
 const framesStore = useFramesStore()
 const sessionStore = useSessionStore()
+const uploadsStore = useUploadsStore()
 
 /** Up to four frames fit in one row; more wrap onto a second. */
 const frameHeight = computed(() => (framesStore.enabledFrames.length > 4 ? 'h-[30vh]' : 'h-[58vh]'))
@@ -45,6 +47,10 @@ function choose(frame: Frame) {
           d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
         />
       </svg>
+      <span
+        v-if="uploadsStore.lastError"
+        class="absolute top-2 right-2 size-3 rounded-full bg-red-500 ring-2 ring-neutral-950"
+      />
     </RouterLink>
 
     <h1 class="text-center text-[3.5vh] tracking-wide uppercase">{{ copy.chooseFrame }}</h1>

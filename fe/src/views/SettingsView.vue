@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useOnline } from '@vueuse/core'
+import { useIntervalFn, useNow, useOnline } from '@vueuse/core'
 import { checkAgent } from '@/lib/agent'
 import { listCameras } from '@/lib/camera'
 import { useFramesStore } from '@/stores/frames'
@@ -15,11 +15,41 @@ const settingsStore = useSettingsStore()
 const shortCodesStore = useShortCodesStore()
 const uploadsStore = useUploadsStore()
 const isOnline = useOnline()
+const now = useNow({ scheduler: (tick) => useIntervalFn(tick, 1000) })
 
 const cameras = ref<MediaDeviceInfo[]>([])
 const cameraError = ref<string | null>(null)
 const printerStatus = ref<{ isReady: boolean; message: string } | null>(null)
 const isTestingPrinter = ref(false)
+const isRetryingUploads = ref(false)
+
+const waitingSessions = computed(() => {
+  const count = uploadsStore.pendingCount
+
+  return `${count} ${count === 1 ? 'session is' : 'sessions are'} saved on this kiosk, waiting to upload.`
+})
+
+const nextRetryLabel = computed(() => {
+  if (isRetryingUploads.value || uploadsStore.nextRetryAt === null) {
+    return 'Retrying…'
+  }
+
+  const seconds = Math.max(0, Math.ceil((uploadsStore.nextRetryAt - now.value.getTime()) / 1000))
+
+  return seconds < 60
+    ? `Retrying automatically in ${seconds}s.`
+    : `Retrying automatically in ${Math.ceil(seconds / 60)} min.`
+})
+
+async function retryUploads() {
+  isRetryingUploads.value = true
+
+  try {
+    await uploadsStore.retryNow()
+  } finally {
+    isRetryingUploads.value = false
+  }
+}
 
 const countdownSeconds = computed({
   get: () => settingsStore.settings.countdownSeconds,
@@ -97,6 +127,26 @@ onMounted(() => {
         Launch
       </button>
     </header>
+
+    <section
+      v-if="uploadsStore.lastError"
+      class="flex items-start justify-between gap-4 rounded-lg border border-red-500/40 bg-red-950/60 p-6"
+    >
+      <div class="space-y-1">
+        <h2 class="font-semibold text-red-300">Uploads are failing</h2>
+        <p class="text-red-100">{{ uploadsStore.lastError }}</p>
+        <p class="text-sm text-red-300/80">{{ waitingSessions }} {{ nextRetryLabel }}</p>
+      </div>
+
+      <button
+        type="button"
+        class="shrink-0 rounded bg-red-700 px-4 py-2 font-semibold disabled:opacity-40"
+        :disabled="isRetryingUploads"
+        @click="retryUploads"
+      >
+        Retry now
+      </button>
+    </section>
 
     <section class="space-y-4 rounded-lg bg-neutral-900 p-6">
       <div class="flex items-baseline justify-between gap-4">
@@ -217,7 +267,9 @@ onMounted(() => {
         <p class="text-sm text-neutral-400">Connection</p>
       </div>
       <div>
-        <p class="text-2xl font-semibold">{{ uploadsStore.pendingCount }}</p>
+        <p class="text-2xl font-semibold" :class="{ 'text-red-400': uploadsStore.lastError }">
+          {{ uploadsStore.pendingCount }}
+        </p>
         <p class="text-sm text-neutral-400">Sessions waiting to upload</p>
       </div>
       <div>

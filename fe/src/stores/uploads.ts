@@ -1,12 +1,31 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { api, isShortCodeRejected } from '@/lib/api'
+import { api, ApiError, isShortCodeRejected } from '@/lib/api'
 import { db } from '@/lib/db'
 import { useShortCodesStore } from '@/stores/shortCodes'
 import type { PendingUpload } from '@/types'
 
 const FIRST_RETRY_MS = 5_000
 const MAX_RETRY_MS = 5 * 60_000
+
+/** Explain a failed upload to the operator. */
+function describeFailure(error: unknown): string {
+  if (!(error instanceof ApiError)) {
+    return 'Could not reach the server.'
+  }
+
+  if (error.status === 413) {
+    return 'The server rejected the upload as too large. Raise PHP’s upload_max_filesize and post_max_size.'
+  }
+
+  if (error.status === 401) {
+    return 'Signed out of the admin panel. Sign in again to resume uploads.'
+  }
+
+  const message = (error.body as { message?: string } | null)?.message
+
+  return `The server responded with ${error.status}${message ? `: ${message}` : '.'}`
+}
 
 /**
  * Finished sessions waiting to reach the backend. Each one is saved to IndexedDB before it
@@ -17,6 +36,9 @@ export const useUploadsStore = defineStore('uploads', () => {
   const shortCodesStore = useShortCodesStore()
 
   const pendingCount = ref(0)
+  /** Why the last attempt failed, or null while uploads are going through. */
+  const lastError = ref<string | null>(null)
+  const nextRetryAt = ref<number | null>(null)
 
   let isRunning = false
   let isRerunRequested = false
@@ -74,22 +96,26 @@ export const useUploadsStore = defineStore('uploads', () => {
 
     try {
       const database = await db
-      let hasFailed = false
+      let failure: string | null = null
 
       for (const pending of await database.getAllFromIndex('uploads', 'createdAt')) {
         try {
           await upload(pending)
           await database.delete('uploads', pending.ref)
         } catch (error) {
-          hasFailed = true
+          failure ??= describeFailure(error)
           console.warn(`Upload of session ${pending.ref} failed; will retry.`, error)
         }
       }
 
-      failedRuns = hasFailed ? failedRuns + 1 : 0
+      failedRuns = failure ? failedRuns + 1 : 0
+      lastError.value = failure
+      nextRetryAt.value = null
 
-      if (hasFailed) {
-        retryTimer = setTimeout(run, Math.min(FIRST_RETRY_MS * 2 ** (failedRuns - 1), MAX_RETRY_MS))
+      if (failure) {
+        const delay = Math.min(FIRST_RETRY_MS * 2 ** (failedRuns - 1), MAX_RETRY_MS)
+        nextRetryAt.value = Date.now() + delay
+        retryTimer = setTimeout(run, delay)
       }
     } finally {
       isRunning = false
@@ -107,5 +133,5 @@ export const useUploadsStore = defineStore('uploads', () => {
     void run()
   }
 
-  return { pendingCount, enqueue, start }
+  return { pendingCount, lastError, nextRetryAt, enqueue, retryNow: run, start }
 })
