@@ -51,7 +51,7 @@ router.beforeEach((to) => {
     return { name: 'frames' }
   }
 
-  if (to.name === 'result' && !sessionStore.paper) {
+  if (to.name === 'result' && !sessionStore.printCopy) {
     return { name: 'frames' }
   }
 })

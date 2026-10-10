@@ -16,7 +16,10 @@ export const useSessionStore = defineStore('session', () => {
   const sessionRef = ref<string | null>(null)
   const frame = ref<Frame | null>(null)
   const photos = ref<Blob[]>([])
-  const paper = ref<Blob | null>(null)
+  /** Uploaded for the soft copy page; has no QR codes. */
+  const softCopy = ref<Blob | null>(null)
+  /** Sent to the printer; carries the QR codes. */
+  const printCopy = ref<Blob | null>(null)
   const code = ref<string | null>(null)
 
   const isComplete = computed(
@@ -27,7 +30,8 @@ export const useSessionStore = defineStore('session', () => {
     sessionRef.value = crypto.randomUUID()
     frame.value = selectedFrame
     photos.value = []
-    paper.value = null
+    softCopy.value = null
+    printCopy.value = null
     code.value = null
   }
 
@@ -49,17 +53,20 @@ export const useSessionStore = defineStore('session', () => {
 
     code.value ??= shortCodesStore.take()
 
-    paper.value = await renderPaper({
+    const paper = await renderPaper({
       frame: currentFrame,
       frameImage: frameImage.blob,
       photos: photos.value,
       shareUrl: code.value ? shareUrl(code.value) : null,
     })
 
+    softCopy.value = paper.softCopy
+    printCopy.value = paper.printCopy
+
     await uploadsStore.enqueue({
       ref: sessionRef.value,
       code: code.value,
-      paper: paper.value,
+      paper: paper.softCopy,
       photos: [...photos.value],
       createdAt: Date.now(),
     })
@@ -69,9 +76,21 @@ export const useSessionStore = defineStore('session', () => {
     sessionRef.value = null
     frame.value = null
     photos.value = []
-    paper.value = null
+    softCopy.value = null
+    printCopy.value = null
     code.value = null
   }
 
-  return { frame, photos, paper, code, isComplete, begin, addPhoto, finish, reset }
+  return {
+    frame,
+    photos,
+    softCopy,
+    printCopy,
+    code,
+    isComplete,
+    begin,
+    addPhoto,
+    finish,
+    reset,
+  }
 })

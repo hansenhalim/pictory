@@ -16,7 +16,7 @@ const router = useRouter()
 const sessionStore = useSessionStore()
 const { settings } = useSettingsStore()
 
-const paperUrl = useObjectUrl(computed(() => sessionStore.paper))
+const paperUrl = useObjectUrl(computed(() => sessionStore.printCopy))
 const qrCodeUrl = ref<string | null>(null)
 const sheets = ref(1)
 const isPrinting = ref(false)
@@ -30,7 +30,12 @@ async function print() {
   hasPrintFailed.value = false
 
   try {
-    await printPaper(settings.agentUrl, sessionStore.paper!, sheets.value, sessionStore.frame!.cut)
+    await printPaper(
+      settings.agentUrl,
+      sessionStore.printCopy!,
+      sheets.value,
+      sessionStore.frame!.cut,
+    )
   } catch (error) {
     console.error(error)
     hasPrintFailed.value = true

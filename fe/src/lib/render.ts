@@ -2,8 +2,9 @@ import QRCode from 'qrcode'
 import type { Frame, Placement, QrPlacement } from '@/types'
 
 /**
- * Renders the printed paper the same way the admin panel's frame preview does: photos
- * cover-fitted into every placement on white, the frame image on top, then the QR codes.
+ * Renders the paper the same way the admin panel's frame preview does: photos cover-fitted
+ * into every placement on white, the frame image on top, then the QR codes. It comes in two
+ * versions: a soft copy without QR codes, and a print copy with them.
  */
 
 const QR_QUIET_ZONE_MODULES = 4
@@ -82,8 +83,15 @@ export interface PaperInput {
   frameImage: Blob
   /** One photo per slot, in slot order. */
   photos: Blob[]
-  /** The soft copy URL to encode, or null to leave the QR areas blank. */
+  /** The soft copy URL the print copy's QR codes link to, or null to leave them blank. */
   shareUrl: string | null
+}
+
+export interface RenderedPaper {
+  /** For the soft copy page: no QR codes, so the frame's artwork shows where they are printed. */
+  softCopy: Blob
+  /** For the printer: the soft copy with the QR codes drawn on top. */
+  printCopy: Blob
 }
 
 export async function renderPaper({
@@ -91,7 +99,7 @@ export async function renderPaper({
   frameImage,
   photos,
   shareUrl,
-}: PaperInput): Promise<Blob> {
+}: PaperInput): Promise<RenderedPaper> {
   const [frameBitmap, ...photoBitmaps] = await Promise.all(
     [frameImage, ...photos].map((blob) => createImageBitmap(blob)),
   )
@@ -114,6 +122,13 @@ export async function renderPaper({
   })
 
   context.drawImage(frameBitmap!, 0, 0, canvas.width, canvas.height)
+  ;[frameBitmap, ...photoBitmaps].forEach((bitmap) => bitmap?.close())
+
+  const softCopy = await canvasToBlob(canvas, 'image/png')
+
+  if (frame.qr_codes.length === 0) {
+    return { softCopy, printCopy: softCopy }
+  }
 
   frame.qr_codes.forEach((placement) => {
     if (shareUrl) {
@@ -124,7 +139,5 @@ export async function renderPaper({
     }
   })
 
-  ;[frameBitmap, ...photoBitmaps].forEach((bitmap) => bitmap?.close())
-
-  return canvasToBlob(canvas, 'image/png')
+  return { softCopy, printCopy: await canvasToBlob(canvas, 'image/png') }
 }

@@ -28,6 +28,7 @@ export interface Frame {
 export interface PendingUpload {
   ref: string
   code: string | null
+  /** The soft copy, without QR codes. */
   paper: Blob
   photos: Blob[]
   createdAt: number
