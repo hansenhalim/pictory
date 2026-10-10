@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { renderPaper } from '@/lib/render'
 import { useFramesStore } from '@/stores/frames'
+import { usePrintsStore } from '@/stores/prints'
 import { shareUrl, useShortCodesStore } from '@/stores/shortCodes'
 import { useUploadsStore } from '@/stores/uploads'
 import type { Frame } from '@/types'
@@ -9,6 +10,7 @@ import type { Frame } from '@/types'
 /** The customer currently using the kiosk, from picking a frame to printing. */
 export const useSessionStore = defineStore('session', () => {
   const framesStore = useFramesStore()
+  const printsStore = usePrintsStore()
   const shortCodesStore = useShortCodesStore()
   const uploadsStore = useUploadsStore()
 
@@ -40,8 +42,8 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   /**
-   * Render the paper and queue the session for upload. The short code is taken only now,
-   * so sessions abandoned before this point never use one up.
+   * Render the paper, queue the session for upload and keep the print copy for reprints. The
+   * short code is taken only now, so sessions abandoned before this point never use one up.
    */
   async function finish() {
     const currentFrame = frame.value
@@ -69,6 +71,13 @@ export const useSessionStore = defineStore('session', () => {
       paper: paper.softCopy,
       photos: [...photos.value],
       createdAt: Date.now(),
+    })
+
+    await printsStore.save({
+      ref: sessionRef.value,
+      createdAt: Date.now(),
+      printCopy: paper.printCopy,
+      cut: currentFrame.cut,
     })
   }
 

@@ -24,6 +24,15 @@ export interface Frame {
   updated_at: string
 }
 
+/** A finished session kept on the kiosk so the operator can print it again. */
+export interface PrintRecord {
+  ref: string
+  createdAt: number
+  /** Exactly what was sent to the printer, QR codes included. */
+  printCopy: Blob
+  cut: boolean
+}
+
 /** A finished session waiting to be uploaded to the backend. */
 export interface PendingUpload {
   ref: string

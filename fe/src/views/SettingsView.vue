@@ -3,17 +3,24 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIntervalFn, useNow, useOnline } from '@vueuse/core'
 import { checkAgent } from '@/lib/agent'
+import PrintThumbnail from '@/components/PrintThumbnail.vue'
+import ReprintDialog from '@/components/ReprintDialog.vue'
 import { listCameras } from '@/lib/camera'
+import { useDeviceStore } from '@/stores/device'
 import { useFramesStore } from '@/stores/frames'
+import { usePrintsStore } from '@/stores/prints'
 import { useSettingsStore } from '@/stores/settings'
 import { useShortCodesStore } from '@/stores/shortCodes'
 import { useUploadsStore } from '@/stores/uploads'
+import type { PrintRecord } from '@/types'
 
 const router = useRouter()
 const framesStore = useFramesStore()
 const settingsStore = useSettingsStore()
 const shortCodesStore = useShortCodesStore()
 const uploadsStore = useUploadsStore()
+const deviceStore = useDeviceStore()
+const printsStore = usePrintsStore()
 const isOnline = useOnline()
 const now = useNow({ scheduler: (tick) => useIntervalFn(tick, 1000) })
 
@@ -22,6 +29,42 @@ const cameraError = ref<string | null>(null)
 const printerStatus = ref<{ isReady: boolean; message: string } | null>(null)
 const isTestingPrinter = ref(false)
 const isRetryingUploads = ref(false)
+const selectedPrint = ref<PrintRecord | null>(null)
+const isConfirmingClear = ref(false)
+
+let clearConfirmationTimer: ReturnType<typeof setTimeout> | undefined
+
+const storageUsed = computed(() => {
+  let size = deviceStore.storageUsedBytes
+
+  if (size === null) {
+    return null
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let unit = 0
+
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024
+    unit++
+  }
+
+  return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
+})
+
+/** Clearing takes a second tap within a few seconds, so a stray tap cannot wipe the history. */
+async function clearHistory() {
+  if (!isConfirmingClear.value) {
+    isConfirmingClear.value = true
+    clearConfirmationTimer = setTimeout(() => (isConfirmingClear.value = false), 4000)
+    return
+  }
+
+  clearTimeout(clearConfirmationTimer)
+  isConfirmingClear.value = false
+  await printsStore.clear()
+  await deviceStore.refreshStorageUsage()
+}
 
 const waitingSessions = computed(() => {
   const count = uploadsStore.pendingCount
@@ -100,11 +143,15 @@ async function testPrinter() {
 }
 
 function launch() {
+  void deviceStore.requestPersistentStorage()
   void shortCodesStore.topUp().catch(() => {})
   void router.push({ name: 'frames' })
 }
 
 onMounted(() => {
+  void printsStore.load()
+  void deviceStore.refreshStorageUsage()
+  void deviceStore.requestPersistentStorage()
   void framesStore.sync().catch(() => {})
   void loadCameras()
 })
@@ -118,14 +165,24 @@ onMounted(() => {
         <h1 class="text-neutral-400">Kiosk settings</h1>
       </div>
 
-      <button
-        type="button"
-        class="rounded-lg bg-white px-6 py-3 font-semibold text-neutral-950 disabled:opacity-40"
-        :disabled="framesStore.enabledFrames.length === 0"
-        @click="launch"
-      >
-        Launch
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="deviceStore.installPrompt"
+          type="button"
+          class="rounded-lg bg-neutral-800 px-6 py-3 font-semibold"
+          @click="deviceStore.install()"
+        >
+          Install kiosk app
+        </button>
+        <button
+          type="button"
+          class="rounded-lg bg-white px-6 py-3 font-semibold text-neutral-950 disabled:opacity-40"
+          :disabled="framesStore.enabledFrames.length === 0"
+          @click="launch"
+        >
+          Launch
+        </button>
+      </div>
     </header>
 
     <section
@@ -259,7 +316,7 @@ onMounted(() => {
       </p>
     </section>
 
-    <section class="grid grid-cols-3 gap-4 rounded-lg bg-neutral-900 p-6 text-center">
+    <section class="grid grid-cols-4 gap-4 rounded-lg bg-neutral-900 p-6 text-center">
       <div>
         <p class="text-2xl font-semibold" :class="isOnline ? 'text-green-400' : 'text-red-400'">
           {{ isOnline ? 'Online' : 'Offline' }}
@@ -276,6 +333,71 @@ onMounted(() => {
         <p class="text-2xl font-semibold">{{ shortCodesStore.pool.length }}</p>
         <p class="text-sm text-neutral-400">QR codes in reserve</p>
       </div>
+      <div>
+        <p
+          class="text-2xl font-semibold"
+          :class="deviceStore.isStoragePersistent ? 'text-green-400' : 'text-amber-400'"
+        >
+          {{ deviceStore.isStoragePersistent ? 'Protected' : 'Not protected' }}
+        </p>
+        <p class="text-sm text-neutral-400">Storage</p>
+      </div>
+      <p v-if="!deviceStore.isStoragePersistent" class="col-span-4 text-sm text-amber-300/80">
+        Chrome may clear the print history and pending uploads when the disk runs low. Install the
+        kiosk app to keep them.
+      </p>
     </section>
+
+    <section class="space-y-4 rounded-lg bg-neutral-900 p-6">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="font-semibold">Print history</h2>
+          <p class="text-sm text-neutral-400">
+            {{ printsStore.total }} {{ printsStore.total === 1 ? 'print' : 'prints' }}
+            <template v-if="storageUsed">· {{ storageUsed }} stored on this kiosk</template>
+          </p>
+        </div>
+
+        <button
+          v-if="printsStore.total > 0"
+          type="button"
+          class="rounded px-4 py-2 text-sm"
+          :class="isConfirmingClear ? 'bg-red-700 font-semibold' : 'bg-neutral-800'"
+          @click="clearHistory"
+        >
+          {{
+            isConfirmingClear ? `Tap again to delete ${printsStore.total} prints` : 'Clear history'
+          }}
+        </button>
+      </div>
+
+      <p v-if="printsStore.saveError" class="text-sm text-amber-400">
+        The latest print could not be kept for reprinting. {{ printsStore.saveError }}
+      </p>
+
+      <p v-if="printsStore.total === 0" class="text-neutral-400">
+        Every session appears here after it is printed, so you can print it again.
+      </p>
+
+      <div class="grid grid-cols-4 gap-4 sm:grid-cols-6">
+        <PrintThumbnail
+          v-for="print in printsStore.prints"
+          :key="print.ref"
+          :print="print"
+          @click="selectedPrint = print"
+        />
+      </div>
+
+      <button
+        v-if="printsStore.prints.length < printsStore.total"
+        type="button"
+        class="w-full rounded bg-neutral-800 py-2"
+        @click="printsStore.loadMore()"
+      >
+        Show more
+      </button>
+    </section>
+
+    <ReprintDialog v-if="selectedPrint" :print="selectedPrint" @close="selectedPrint = null" />
   </main>
 </template>

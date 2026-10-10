@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { useDeviceStore } from './stores/device'
 import { useFramesStore } from './stores/frames'
 import { useShortCodesStore } from './stores/shortCodes'
 import { useUploadsStore } from './stores/uploads'
@@ -12,6 +13,8 @@ import { useUploadsStore } from './stores/uploads'
 const app = createApp(App)
 
 app.use(createPinia())
+
+useDeviceStore().start()
 
 const framesStore = useFramesStore()
 const shortCodesStore = useShortCodesStore()

@@ -34,7 +34,22 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      manifest: false,
+      // Installing the kiosk as an app is what makes Chrome grant it persistent storage.
+      manifest: {
+        id: '/kiosk/',
+        name: 'pictory.photo kiosk',
+        short_name: 'pictory',
+        start_url: '/kiosk/',
+        scope: '/kiosk/',
+        display: 'fullscreen',
+        background_color: '#0a0a0a',
+        theme_color: '#0a0a0a',
+        icons: [
+          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: '/kiosk/index.html',

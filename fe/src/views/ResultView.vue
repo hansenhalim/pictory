@@ -4,44 +4,22 @@ import { useRouter } from 'vue-router'
 import { useObjectUrl } from '@vueuse/core'
 import QRCode from 'qrcode'
 import KioskButton from '@/components/KioskButton.vue'
+import PrintCopiesStepper from '@/components/PrintCopiesStepper.vue'
+import { usePrinter } from '@/composables/usePrinter'
 import { copy } from '@/copy'
-import { printPaper } from '@/lib/agent'
 import { useSessionStore } from '@/stores/session'
-import { useSettingsStore } from '@/stores/settings'
 import { shareUrl } from '@/stores/shortCodes'
-
-const MAX_SHEETS = 20
 
 const router = useRouter()
 const sessionStore = useSessionStore()
-const { settings } = useSettingsStore()
+const { isPrinting, failure: printFailure, print: sendToPrinter } = usePrinter()
 
 const paperUrl = useObjectUrl(computed(() => sessionStore.printCopy))
 const qrCodeUrl = ref<string | null>(null)
 const sheets = ref(1)
-const isPrinting = ref(false)
-const hasPrintFailed = ref(false)
 
-/** Customers count prints, and a cut sheet makes two strips. */
-const prints = computed(() => sheets.value * (sessionStore.frame?.cut ? 2 : 1))
-
-async function print() {
-  isPrinting.value = true
-  hasPrintFailed.value = false
-
-  try {
-    await printPaper(
-      settings.agentUrl,
-      sessionStore.printCopy!,
-      sheets.value,
-      sessionStore.frame!.cut,
-    )
-  } catch (error) {
-    console.error(error)
-    hasPrintFailed.value = true
-  } finally {
-    isPrinting.value = false
-  }
+function print() {
+  void sendToPrinter(sessionStore.printCopy!, sheets.value, sessionStore.frame!.cut)
 }
 
 async function restart() {
@@ -71,34 +49,17 @@ onMounted(async () => {
     />
 
     <section class="flex w-88 flex-col items-center gap-8 text-center">
-      <div class="space-y-3">
-        <p class="tracking-wide text-neutral-400 uppercase">{{ copy.prints }}</p>
-        <div class="flex items-center gap-6">
-          <button
-            type="button"
-            class="size-16 rounded-full bg-neutral-800 text-3xl disabled:opacity-30"
-            :disabled="sheets <= 1"
-            @click="sheets--"
-          >
-            −
-          </button>
-          <span class="w-20 text-5xl font-semibold tabular-nums">{{ prints }}</span>
-          <button
-            type="button"
-            class="size-16 rounded-full bg-neutral-800 text-3xl disabled:opacity-30"
-            :disabled="sheets >= MAX_SHEETS"
-            @click="sheets++"
-          >
-            +
-          </button>
-        </div>
-      </div>
+      <PrintCopiesStepper
+        v-model="sheets"
+        :label="copy.prints"
+        :cut="sessionStore.frame?.cut ?? false"
+      />
 
       <div class="w-full space-y-2">
         <KioskButton class="w-full" :disabled="isPrinting" @click="print">
           {{ isPrinting ? copy.printing : copy.print }}
         </KioskButton>
-        <p v-if="hasPrintFailed" class="text-red-400">{{ copy.printFailed }}</p>
+        <p v-if="printFailure" class="text-red-400">{{ copy.printFailed }}</p>
       </div>
 
       <div v-if="qrCodeUrl" class="space-y-3">
