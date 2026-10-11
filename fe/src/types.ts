@@ -31,6 +31,10 @@ export interface PrintRecord {
   /** Exactly what was sent to the printer, QR codes included. */
   printCopy: Blob
   cut: boolean
+  /** The QR card the operator assigned the session to, e.g. "3.42". Missing on older prints. */
+  card?: string | null
+  /** Why the backend refused the card, e.g. because it does not exist. */
+  cardError?: string | null
 }
 
 /** A finished session waiting to be uploaded to the backend. */
@@ -40,5 +44,13 @@ export interface PendingUpload {
   /** The soft copy, without QR codes. */
   paper: Blob
   photos: Blob[]
+  createdAt: number
+}
+
+/** A session's QR card, waiting to be sent to the backend once the session has been uploaded. */
+export interface PendingAssignment {
+  ref: string
+  /** The card's label, or null to take the session off its card. */
+  card: string | null
   createdAt: number
 }

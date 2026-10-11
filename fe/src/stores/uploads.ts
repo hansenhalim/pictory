@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api, ApiError, isShortCodeRejected } from '@/lib/api'
 import { db } from '@/lib/db'
+import { useAssignmentsStore } from '@/stores/assignments'
 import { useShortCodesStore } from '@/stores/shortCodes'
 import type { PendingUpload } from '@/types'
 
@@ -34,6 +35,7 @@ function describeFailure(error: unknown): string {
  */
 export const useUploadsStore = defineStore('uploads', () => {
   const shortCodesStore = useShortCodesStore()
+  const assignmentsStore = useAssignmentsStore()
 
   const pendingCount = ref(0)
   /** Why the last attempt failed, or null while uploads are going through. */
@@ -84,7 +86,10 @@ export const useUploadsStore = defineStore('uploads', () => {
     }
   }
 
-  /** Upload every pending session, oldest first. One failing session does not hold up the rest. */
+  /**
+   * Upload every pending session, oldest first. One failing session does not hold up the rest.
+   * Cards assigned to sessions wait for their upload, so they are sent once it lands.
+   */
   async function run(): Promise<void> {
     if (isRunning) {
       isRerunRequested = true
@@ -97,15 +102,21 @@ export const useUploadsStore = defineStore('uploads', () => {
     try {
       const database = await db
       let failure: string | null = null
+      let hasUploaded = false
 
       for (const pending of await database.getAllFromIndex('uploads', 'createdAt')) {
         try {
           await upload(pending)
           await database.delete('uploads', pending.ref)
+          hasUploaded = true
         } catch (error) {
           failure ??= describeFailure(error)
           console.warn(`Upload of session ${pending.ref} failed; will retry.`, error)
         }
+      }
+
+      if (hasUploaded) {
+        void assignmentsStore.run()
       }
 
       failedRuns = failure ? failedRuns + 1 : 0

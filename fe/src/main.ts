@@ -5,6 +5,7 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { useAssignmentsStore } from './stores/assignments'
 import { useDeviceStore } from './stores/device'
 import { useFramesStore } from './stores/frames'
 import { useShortCodesStore } from './stores/shortCodes'
@@ -28,6 +29,7 @@ function refreshCache() {
 await framesStore.load()
 
 useUploadsStore().start()
+useAssignmentsStore().start()
 window.addEventListener('online', refreshCache)
 
 if (navigator.onLine) {

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { renderPaper } from '@/lib/render'
+import { useAssignmentsStore } from '@/stores/assignments'
 import { useFramesStore } from '@/stores/frames'
 import { usePrintsStore } from '@/stores/prints'
 import { shareUrl, useShortCodesStore } from '@/stores/shortCodes'
@@ -9,6 +10,7 @@ import type { Frame } from '@/types'
 
 /** The customer currently using the kiosk, from picking a frame to printing. */
 export const useSessionStore = defineStore('session', () => {
+  const assignmentsStore = useAssignmentsStore()
   const framesStore = useFramesStore()
   const printsStore = usePrintsStore()
   const shortCodesStore = useShortCodesStore()
@@ -23,6 +25,8 @@ export const useSessionStore = defineStore('session', () => {
   /** Sent to the printer; carries the QR codes. */
   const printCopy = ref<Blob | null>(null)
   const code = ref<string | null>(null)
+  /** The QR card the operator assigned this session to. */
+  const card = ref<string | null>(null)
 
   const isComplete = computed(
     () => frame.value !== null && photos.value.length >= frame.value.slots.length,
@@ -35,6 +39,7 @@ export const useSessionStore = defineStore('session', () => {
     softCopy.value = null
     printCopy.value = null
     code.value = null
+    card.value = null
   }
 
   function addPhoto(photo: Blob) {
@@ -81,6 +86,21 @@ export const useSessionStore = defineStore('session', () => {
     })
   }
 
+  /** Assign the finished session to a QR card, and offer that card again for the next session. */
+  async function assignCard(label: string | null) {
+    if (!sessionRef.value) {
+      throw new Error('There is no session to assign.')
+    }
+
+    card.value = label
+
+    if (label) {
+      assignmentsStore.lastCard = label
+    }
+
+    await assignmentsStore.assign(sessionRef.value, label)
+  }
+
   function reset() {
     sessionRef.value = null
     frame.value = null
@@ -88,6 +108,7 @@ export const useSessionStore = defineStore('session', () => {
     softCopy.value = null
     printCopy.value = null
     code.value = null
+    card.value = null
   }
 
   return {
@@ -96,10 +117,12 @@ export const useSessionStore = defineStore('session', () => {
     softCopy,
     printCopy,
     code,
+    card,
     isComplete,
     begin,
     addPhoto,
     finish,
+    assignCard,
     reset,
   }
 })

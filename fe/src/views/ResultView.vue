@@ -3,23 +3,50 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useObjectUrl } from '@vueuse/core'
 import QRCode from 'qrcode'
+import CardKeypad from '@/components/CardKeypad.vue'
 import KioskButton from '@/components/KioskButton.vue'
 import PrintCopiesStepper from '@/components/PrintCopiesStepper.vue'
 import { usePrinter } from '@/composables/usePrinter'
 import { copy } from '@/copy'
+import { nextCardLabel } from '@/lib/cards'
+import { useAssignmentsStore } from '@/stores/assignments'
 import { useSessionStore } from '@/stores/session'
 import { shareUrl } from '@/stores/shortCodes'
 
 const router = useRouter()
 const sessionStore = useSessionStore()
+const assignmentsStore = useAssignmentsStore()
 const { isPrinting, failure: printFailure, print: sendToPrinter } = usePrinter()
 
 const paperUrl = useObjectUrl(computed(() => sessionStore.printCopy))
 const qrCodeUrl = ref<string | null>(null)
 const sheets = ref(1)
+const isKeypadOpen = ref(false)
+
+/** A returning customer keeps their card, and a new one gets the next card from the deck. */
+const cardSuggestions = computed(() => {
+  const lastCard = assignmentsStore.lastCard
+
+  return lastCard
+    ? [
+        { card: lastCard, hint: 'Previous' },
+        { card: nextCardLabel(lastCard), hint: 'Next' },
+      ]
+    : []
+})
 
 function print() {
   void sendToPrinter(sessionStore.printCopy!, sheets.value, sessionStore.frame!.cut)
+}
+
+async function assignCard(card: string | null) {
+  isKeypadOpen.value = false
+
+  try {
+    await sessionStore.assignCard(card)
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 async function restart() {
@@ -74,5 +101,24 @@ onMounted(async () => {
     </section>
 
     <p class="absolute bottom-6 text-neutral-500">pictory.photo</p>
+
+    <button
+      type="button"
+      class="absolute top-6 right-8 rounded-lg bg-neutral-900 px-4 py-2 text-neutral-400"
+      @click="isKeypadOpen = true"
+    >
+      {{ copy.card }}
+      <span v-if="sessionStore.card" class="font-semibold text-neutral-100 tabular-nums">
+        {{ sessionStore.card }} ✓
+      </span>
+    </button>
+
+    <CardKeypad
+      v-if="isKeypadOpen"
+      :current="sessionStore.card"
+      :suggestions="cardSuggestions"
+      @submit="assignCard"
+      @close="isKeypadOpen = false"
+    />
   </main>
 </template>

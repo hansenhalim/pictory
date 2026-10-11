@@ -59,11 +59,33 @@ export const usePrintsStore = defineStore('prints', () => {
     }
   }
 
+  /** Change a kept print, e.g. to record its card. Prints no longer kept are left alone. */
+  async function update(ref: string, changes: Partial<PrintRecord>) {
+    try {
+      const transaction = (await db).transaction('prints', 'readwrite')
+      const print = await transaction.store.get(ref)
+
+      if (print) {
+        await transaction.store.put({ ...print, ...changes })
+      }
+
+      await transaction.done
+    } catch (error) {
+      console.error(error)
+    }
+
+    const loaded = prints.value.find((print) => print.ref === ref)
+
+    if (loaded) {
+      Object.assign(loaded, changes)
+    }
+  }
+
   async function clear() {
     await (await db).clear('prints')
     prints.value = []
     total.value = 0
   }
 
-  return { prints, total, saveError, load, loadMore, save, clear }
+  return { prints, total, saveError, load, loadMore, save, update, clear }
 })

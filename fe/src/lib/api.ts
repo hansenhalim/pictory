@@ -70,6 +70,14 @@ export const api = {
     return (await sendJson<{ data: StoredPaper }>('/api/papers', { method: 'POST', body: form }))
       .data
   },
+
+  async assignCard(ref: string, card: string | null): Promise<void> {
+    await send(`/api/papers/${ref}/card`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ card }),
+    })
+  },
 }
 
 /** Whether a failed upload was rejected only because its short code is unusable. */

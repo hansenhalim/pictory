@@ -23,6 +23,8 @@ const backendPaths = [
   '/fonts',
   '/p/',
   '/P/',
+  '/c/',
+  '/C/',
 ]
 
 // https://vite.dev/config/
