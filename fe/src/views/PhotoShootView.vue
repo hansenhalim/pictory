@@ -35,15 +35,48 @@ const isLastSlot = computed(() => sessionStore.photos.length === frame.value.slo
 /** Every placement of a photo shares its shape, so the first one stands in for the slot. */
 const placement = computed(() => frame.value.slots[slotIndex.value]![0]!)
 
-/** The preview has the slot's shape, as large as fits above the buttons. */
+/** The part of the slot that lies on the paper; the rest of the photo is cut off when printed. */
+const visibleArea = computed(() => {
+  const { x, y, width, height } = placement.value
+  const image = frameImage.value
+
+  if (!image) {
+    return placement.value
+  }
+
+  const left = Math.max(x, 0)
+  const top = Math.max(y, 0)
+
+  return {
+    x: left,
+    y: top,
+    width: Math.min(x + width, image.width) - left,
+    height: Math.min(y + height, image.height) - top,
+  }
+})
+
+/** The preview has the visible area's shape, as large as fits above the buttons. */
 const viewportStyle = computed(() => ({
-  aspectRatio: `${placement.value.width} / ${placement.value.height}`,
-  height: `min(78vh, calc(94vw * ${placement.value.height / placement.value.width}))`,
+  aspectRatio: `${visibleArea.value.width} / ${visibleArea.value.height}`,
+  height: `min(78vh, calc(94vw * ${visibleArea.value.height / visibleArea.value.width}))`,
 }))
 
-/** The frame image, scaled and shifted so the slot's area of it lies exactly over the preview. */
-const overlayStyle = computed(() => {
+/** The whole slot, shifted so its visible area lies exactly over the preview. */
+const photoStyle = computed(() => {
   const { x, y, width, height } = placement.value
+  const area = visibleArea.value
+
+  return {
+    left: `${((x - area.x) / area.width) * 100}%`,
+    top: `${((y - area.y) / area.height) * 100}%`,
+    width: `${(width / area.width) * 100}%`,
+    height: `${(height / area.height) * 100}%`,
+  }
+})
+
+/** The frame image, scaled and shifted so the visible area of it lies exactly over the preview. */
+const overlayStyle = computed(() => {
+  const { x, y, width, height } = visibleArea.value
   const image = frameImage.value
 
   return image
@@ -128,21 +161,23 @@ onBeforeUnmount(() => {
 <template>
   <main class="flex h-full flex-col items-center justify-center gap-[4vh] px-8 py-6">
     <div class="relative overflow-hidden rounded bg-black" :style="viewportStyle">
-      <video
-        ref="video"
-        autoplay
-        muted
-        playsinline
-        class="absolute inset-0 size-full object-cover"
-        :class="{ '-scale-x-100': settings.mirror }"
-      />
+      <div class="absolute" :style="photoStyle">
+        <video
+          ref="video"
+          autoplay
+          muted
+          playsinline
+          class="absolute inset-0 size-full object-cover"
+          :class="{ '-scale-x-100': settings.mirror }"
+        />
 
-      <img
-        v-if="capturedUrl"
-        :src="capturedUrl"
-        alt=""
-        class="absolute inset-0 size-full object-cover"
-      />
+        <img
+          v-if="capturedUrl"
+          :src="capturedUrl"
+          alt=""
+          class="absolute inset-0 size-full object-cover"
+        />
+      </div>
 
       <img
         v-if="frameImage"
