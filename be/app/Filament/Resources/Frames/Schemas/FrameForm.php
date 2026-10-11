@@ -40,7 +40,6 @@ class FrameForm
                         ->columnSpanFull(),
                     Toggle::make('cut')
                         ->label('Cut in half')
-                        ->helperText('Print on 4R and cut it into two 2R strips.')
                         ->default(false)
                         ->columnSpanFull(),
                     Toggle::make('slots_as_json')
@@ -51,7 +50,6 @@ class FrameForm
                         ->columnSpanFull(),
                     CodeEditor::make('slots_json')
                         ->label('Photo slots')
-                        ->helperText('A list of slots, one per photo. Each slot is a list of placements: {"x": 29, "y": 40, "width": 600, "height": 400}.')
                         ->language(Language::Json)
                         ->required()
                         ->rule(fn (): Closure => function (string $attribute, mixed $value, Closure $fail): void {
@@ -63,7 +61,6 @@ class FrameForm
                         ->columnSpanFull(),
                     Repeater::make('slots')
                         ->label('Photo slots')
-                        ->helperText('One slot per photo. Add placements to print the same photo in several places.')
                         ->schema([
                             Repeater::make('placements')
                                 ->hiddenLabel()
@@ -92,7 +89,6 @@ class FrameForm
                         ->columnSpanFull(),
                     Repeater::make('qr_codes')
                         ->label('QR codes')
-                        ->helperText('Optional. Add one per printed copy, e.g. one per strip when the print is cut in half.')
                         ->table([
                             TableColumn::make('X')->markAsRequired(),
                             TableColumn::make('Y')->markAsRequired(),
