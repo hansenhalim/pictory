@@ -15,5 +15,7 @@ export const copy = {
   scanForSoftCopy: 'Scan QR untuk mengambil softcopy',
   softCopyUnavailable: 'Softcopy tidak tersedia',
   restart: 'Mulai lagi',
+  qr: 'QR',
   card: 'Kartu',
+  enterCard: 'Masukkan nomor kartu',
 }

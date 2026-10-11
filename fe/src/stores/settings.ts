@@ -9,6 +9,8 @@ export interface KioskSettings {
   mirror: boolean
   countdownSeconds: number
   agentUrl: string
+  /** What the result screen offers for the soft copy: the short code's QR, or assigning a QR card. */
+  softCopyLink: 'qr' | 'card'
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -20,6 +22,7 @@ export const useSettingsStore = defineStore('settings', () => {
       mirror: true,
       countdownSeconds: 3,
       agentUrl: 'http://127.0.0.1:8001',
+      softCopyLink: 'qr',
     },
     localStorage,
     { mergeDefaults: true },
