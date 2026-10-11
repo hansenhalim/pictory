@@ -190,26 +190,6 @@ onMounted(() => {
       </div>
     </header>
 
-    <section
-      v-if="uploadsStore.lastError"
-      class="flex items-start justify-between gap-4 rounded-lg border border-red-500/40 bg-red-950/60 p-6"
-    >
-      <div class="space-y-1">
-        <h2 class="font-semibold text-red-300">Uploads are failing</h2>
-        <p class="text-red-100">{{ uploadsStore.lastError }}</p>
-        <p class="text-sm text-red-300/80">{{ waitingSessions }} {{ nextRetryLabel }}</p>
-      </div>
-
-      <button
-        type="button"
-        class="shrink-0 rounded bg-red-700 px-4 py-2 font-semibold disabled:opacity-40"
-        :disabled="isRetryingUploads"
-        @click="retryUploads"
-      >
-        Retry now
-      </button>
-    </section>
-
     <section class="space-y-4 rounded-lg bg-neutral-900 p-6">
       <div class="flex items-baseline justify-between gap-4">
         <h2 class="font-semibold">Frames</h2>
@@ -342,18 +322,12 @@ onMounted(() => {
       </p>
     </section>
 
-    <section class="grid grid-cols-4 gap-4 rounded-lg bg-neutral-900 p-6 text-center">
+    <section class="grid grid-cols-3 gap-4 rounded-lg bg-neutral-900 p-6 text-center">
       <div>
         <p class="text-2xl font-semibold" :class="isOnline ? 'text-green-400' : 'text-red-400'">
           {{ isOnline ? 'Online' : 'Offline' }}
         </p>
         <p class="text-sm text-neutral-400">Connection</p>
-      </div>
-      <div>
-        <p class="text-2xl font-semibold" :class="{ 'text-red-400': uploadsStore.lastError }">
-          {{ uploadsStore.pendingCount }}
-        </p>
-        <p class="text-sm text-neutral-400">Sessions waiting to upload</p>
       </div>
       <div>
         <p class="text-2xl font-semibold">{{ shortCodesStore.pool.length }}</p>
@@ -368,16 +342,19 @@ onMounted(() => {
         </p>
         <p class="text-sm text-neutral-400">Storage</p>
       </div>
-      <p v-if="!deviceStore.isStoragePersistent" class="col-span-4 text-sm text-amber-300/80">
+      <p v-if="!deviceStore.isStoragePersistent" class="col-span-3 text-sm text-amber-300/80">
         Chrome may clear the print history and pending uploads when the disk runs low. Install the
         kiosk app to keep them.
       </p>
     </section>
 
-    <section class="space-y-4 rounded-lg bg-neutral-900 p-6">
+    <section
+      v-if="printsStore.total > 0 || printsStore.saveError || uploadsStore.lastError"
+      class="space-y-4 rounded-lg bg-neutral-900 p-6"
+    >
       <div class="flex items-center justify-between gap-4">
         <div>
-          <h2 class="font-semibold">Print history</h2>
+          <h2 class="font-semibold">Gallery</h2>
           <p class="text-sm text-neutral-400">
             {{ printsStore.total }} {{ printsStore.total === 1 ? 'print' : 'prints' }}
             <template v-if="storageUsed">· {{ storageUsed }} stored on this kiosk</template>
@@ -397,12 +374,28 @@ onMounted(() => {
         </button>
       </div>
 
+      <div
+        v-if="uploadsStore.lastError"
+        class="flex items-start justify-between gap-4 rounded-lg border border-red-500/40 bg-red-950/60 p-4"
+      >
+        <div class="space-y-1">
+          <h3 class="font-semibold text-red-300">Uploads are failing</h3>
+          <p class="text-red-100">{{ uploadsStore.lastError }}</p>
+          <p class="text-sm text-red-300/80">{{ waitingSessions }} {{ nextRetryLabel }}</p>
+        </div>
+
+        <button
+          type="button"
+          class="shrink-0 rounded bg-red-700 px-4 py-2 font-semibold disabled:opacity-40"
+          :disabled="isRetryingUploads"
+          @click="retryUploads"
+        >
+          Retry now
+        </button>
+      </div>
+
       <p v-if="printsStore.saveError" class="text-sm text-amber-400">
         The latest print could not be kept for reprinting. {{ printsStore.saveError }}
-      </p>
-
-      <p v-if="printsStore.total === 0" class="text-neutral-400">
-        Every session appears here after it is printed, so you can print it again.
       </p>
 
       <div class="grid grid-cols-4 gap-4 sm:grid-cols-6">
