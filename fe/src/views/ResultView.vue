@@ -108,7 +108,7 @@ onMounted(async () => {
             class="rounded-md px-8 py-2 text-lg transition"
             :class="
               settings.softCopyLink === link.value
-                ? 'bg-neutral-700 font-semibold text-white'
+                ? 'bg-neutral-700 font-semibold text-neutral-50'
                 : 'text-neutral-400'
             "
             @click="settings.softCopyLink = link.value"

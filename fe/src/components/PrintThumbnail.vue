@@ -39,10 +39,10 @@ const label = computed(() => {
         class="absolute top-1 left-1 rounded px-1.5 text-xs font-semibold tabular-nums"
         :class="
           print.cardError
-            ? 'bg-red-600 text-white'
+            ? 'bg-red-600 text-neutral-50'
             : assignmentsStore.pendingRefs.has(print.ref)
               ? 'bg-neutral-950/80 text-neutral-300'
-              : 'bg-neutral-950 text-white'
+              : 'bg-neutral-950 text-neutral-50'
         "
         >{{ print.card ?? 'Card' }}</span
       >

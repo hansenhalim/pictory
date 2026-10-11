@@ -54,7 +54,7 @@ async function assignCard(card: string | null) {
       <div class="w-full space-y-2">
         <button
           type="button"
-          class="w-full rounded-lg bg-white py-4 text-2xl font-semibold text-neutral-950 disabled:opacity-40"
+          class="w-full rounded-lg bg-neutral-50 py-4 text-2xl font-semibold text-neutral-950 disabled:opacity-40"
           :disabled="isPrinting"
           @click="sendToPrinter(print.printCopy, sheets, print.cut)"
         >

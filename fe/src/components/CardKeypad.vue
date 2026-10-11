@@ -116,7 +116,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
         </button>
         <button
           type="button"
-          class="flex-1 rounded-lg bg-white py-4 text-xl font-semibold text-neutral-950 disabled:opacity-40"
+          class="flex-1 rounded-lg bg-neutral-50 py-4 text-xl font-semibold text-neutral-950 disabled:opacity-40"
           :disabled="!card"
           @click="submit"
         >

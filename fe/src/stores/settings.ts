@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
+import { watchEffect } from 'vue'
 import { useStorage } from '@vueuse/core'
+
+/** The browser's toolbar color for each theme, matching the page background. */
+const THEME_COLORS = { dark: '#0a0a0a', light: '#fafafa' }
 
 /** Per-kiosk settings, kept on the device. Frames are global; each kiosk picks its own. */
 export interface KioskSettings {
@@ -11,6 +15,7 @@ export interface KioskSettings {
   agentUrl: string
   /** What the result screen offers for the soft copy: the short code's QR, or assigning a QR card. */
   softCopyLink: 'qr' | 'card'
+  theme: 'dark' | 'light'
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -23,10 +28,18 @@ export const useSettingsStore = defineStore('settings', () => {
       countdownSeconds: 3,
       agentUrl: 'http://127.0.0.1:8001',
       softCopyLink: 'qr',
+      theme: 'dark',
     },
     localStorage,
     { mergeDefaults: true },
   )
+
+  watchEffect(() => {
+    document.documentElement.dataset.theme = settings.value.theme
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', THEME_COLORS[settings.value.theme])
+  })
 
   function toggleFrame(frameId: number) {
     const ids = settings.value.enabledFrameIds

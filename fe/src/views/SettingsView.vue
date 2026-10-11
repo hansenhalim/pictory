@@ -94,6 +94,11 @@ async function retryUploads() {
   }
 }
 
+const themes = [
+  { value: 'dark', label: 'Dark' },
+  { value: 'light', label: 'Light' },
+] as const
+
 const countdownSeconds = computed({
   get: () => settingsStore.settings.countdownSeconds,
   set: (seconds: number) => {
@@ -176,7 +181,7 @@ onMounted(() => {
         </button>
         <button
           type="button"
-          class="rounded-lg bg-white px-6 py-3 font-semibold text-neutral-950 disabled:opacity-40"
+          class="rounded-lg bg-neutral-50 px-6 py-3 font-semibold text-neutral-950 disabled:opacity-40"
           :disabled="framesStore.enabledFrames.length === 0"
           @click="launch"
         >
@@ -227,7 +232,7 @@ onMounted(() => {
           :key="frame.id"
           type="button"
           class="relative rounded-lg p-1 ring-2 transition"
-          :class="positionOf(frame.id) ? 'ring-white' : 'opacity-50 ring-transparent'"
+          :class="positionOf(frame.id) ? 'ring-neutral-50' : 'opacity-50 ring-transparent'"
           @click="settingsStore.toggleFrame(frame.id)"
         >
           <img
@@ -238,7 +243,7 @@ onMounted(() => {
           />
           <span
             v-if="positionOf(frame.id)"
-            class="absolute top-2 left-2 flex size-7 items-center justify-center rounded-full bg-white text-sm font-semibold text-neutral-950"
+            class="absolute top-2 left-2 flex size-7 items-center justify-center rounded-full bg-neutral-50 text-sm font-semibold text-neutral-950"
           >
             {{ positionOf(frame.id) }}
           </span>
@@ -283,6 +288,27 @@ onMounted(() => {
           class="w-24 rounded bg-neutral-800 px-3 py-2"
         />
       </label>
+    </section>
+
+    <section class="flex items-center justify-between gap-4 rounded-lg bg-neutral-900 p-6">
+      <h2 class="font-semibold">Theme</h2>
+
+      <div class="flex rounded-lg bg-neutral-800 p-1">
+        <button
+          v-for="theme in themes"
+          :key="theme.value"
+          type="button"
+          class="rounded-md px-6 py-2 transition"
+          :class="
+            settingsStore.settings.theme === theme.value
+              ? 'bg-neutral-600 font-semibold'
+              : 'text-neutral-400'
+          "
+          @click="settingsStore.settings.theme = theme.value"
+        >
+          {{ theme.label }}
+        </button>
+      </div>
     </section>
 
     <section class="space-y-4 rounded-lg bg-neutral-900 p-6">
