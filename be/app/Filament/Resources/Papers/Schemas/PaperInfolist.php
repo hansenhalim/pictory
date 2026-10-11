@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Papers\Schemas;
 
+use App\Models\Paper;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Group;
@@ -19,6 +20,10 @@ class PaperInfolist
                         ->copyable(),
                     TextEntry::make('created_at')
                         ->dateTime(),
+                    TextEntry::make('qrCard.label')
+                        ->label('Card')
+                        ->url(fn (Paper $record): ?string => $record->qrCard ? route('qr-cards.shared', $record->qrCard->uuid) : null, shouldOpenInNewTab: true)
+                        ->placeholder('Not assigned to a card.'),
                     ImageEntry::make('photos.file_path')
                         ->label('Photos')
                         ->url(fn (ImageEntry $component, string $state): ?string => $component->getImageUrl($state), shouldOpenInNewTab: true)
