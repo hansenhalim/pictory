@@ -8,7 +8,7 @@ import KioskButton from '@/components/KioskButton.vue'
 import PrintCopiesStepper from '@/components/PrintCopiesStepper.vue'
 import { usePrinter } from '@/composables/usePrinter'
 import { copy } from '@/copy'
-import { nextCardLabel } from '@/lib/cards'
+import { nextCardLabel, parseCardLabel } from '@/lib/cards'
 import { useAssignmentsStore } from '@/stores/assignments'
 import { useSessionStore } from '@/stores/session'
 import { useSettingsStore } from '@/stores/settings'
@@ -34,7 +34,7 @@ const softCopyLinks = [
 
 /** A returning customer keeps their card, and a new one gets the next card from the deck. */
 const cardSuggestions = computed(() => {
-  const lastCard = assignmentsStore.lastCard
+  const lastCard = parseCardLabel(assignmentsStore.lastCard ?? '')
 
   return lastCard
     ? [

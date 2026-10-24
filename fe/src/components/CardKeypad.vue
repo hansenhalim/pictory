@@ -15,13 +15,13 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0']
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
 const input = ref('')
 const card = computed(() => parseCardLabel(input.value))
 
 function press(key: string) {
-  if (input.value.length < 13) {
+  if (input.value.length < 11) {
     input.value += key
   }
 }
@@ -40,8 +40,6 @@ function submit() {
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
   if (/^\d$/.test(event.key)) {
     press(event.key)
-  } else if (event.key === '.' || event.key === ',') {
-    press('.')
   } else if (event.key === 'Backspace') {
     backspace()
   } else if (event.key === 'Enter') {
@@ -70,7 +68,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
         class="rounded-lg bg-neutral-900 py-3 text-center text-6xl font-semibold tabular-nums"
         :class="{ 'text-neutral-600': !input }"
       >
-        {{ input || 'deck.card' }}
+        {{ input || 'card no.' }}
       </p>
 
       <div v-if="suggestions.length" class="flex gap-3">
@@ -92,6 +90,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
           :key="key"
           type="button"
           class="rounded-lg bg-neutral-800 py-4 text-3xl font-semibold active:bg-neutral-700"
+          :class="{ 'col-start-2': key === '0' }"
           @click="press(key)"
         >
           {{ key }}

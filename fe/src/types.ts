@@ -31,7 +31,7 @@ export interface PrintRecord {
   /** Exactly what was sent to the printer, QR codes included. */
   printCopy: Blob
   cut: boolean
-  /** The QR card the operator assigned the session to, e.g. "3.42". Missing on older prints. */
+  /** The QR card the operator assigned the session to, e.g. "342". Missing on older prints. */
   card?: string | null
   /** Why the backend refused the card, e.g. because it does not exist. */
   cardError?: string | null

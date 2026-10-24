@@ -1,26 +1,18 @@
-/** Cards are printed in decks of this many, numbered from 1. */
-export const DECK_SIZE = 100
-
 /**
- * Read a card label as the operator typed it, e.g. "3.42" for card 42 of deck 3. A comma works
- * as the dot and leading zeros are dropped, so "03,042" is "3.42". Null when it cannot be a card.
+ * Read a card label as the operator typed it: the deck followed by the card's two digits, so
+ * "342" is card 42 of deck 3 and "1205" is card 5 of deck 12. Leading zeros are dropped. Null
+ * when it cannot be a card.
  */
 export function parseCardLabel(input: string): string | null {
-  const match = /^(\d{1,9})[.,](\d{1,3})$/.exec(input.trim())
+  const label = input.trim().replace(/^0+/, '')
 
-  if (!match) {
-    return null
-  }
-
-  const deck = Number(match[1])
-  const number = Number(match[2])
-
-  return deck >= 1 && number >= 1 && number <= DECK_SIZE ? `${deck}.${number}` : null
+  return /^\d{3,11}$/.test(label) ? label : null
 }
 
-/** The card after this one: "3.43" after "3.42", and the first card of deck 4 after "3.100". */
+/**
+ * The card after this one. Cards are numbered 00 to 99, so it is the label plus one: "343"
+ * after "342", and the first card of deck 4, "400", after "399".
+ */
 export function nextCardLabel(label: string): string {
-  const [deck, number] = label.split('.').map(Number) as [number, number]
-
-  return number < DECK_SIZE ? `${deck}.${number + 1}` : `${deck + 1}.1`
+  return String(Number(label) + 1)
 }

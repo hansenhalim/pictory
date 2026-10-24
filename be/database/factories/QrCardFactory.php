@@ -19,7 +19,7 @@ class QrCardFactory extends Factory
     {
         return [
             'deck' => fake()->unique()->numberBetween(1_000_000, 999_999_999),
-            'number' => fake()->numberBetween(1, QrCard::DECK_SIZE),
+            'number' => fake()->numberBetween(0, QrCard::DECK_SIZE - 1),
             'uuid' => fake()->uuid(),
         ];
     }

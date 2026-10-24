@@ -66,20 +66,24 @@ class QrCardsTable
     }
 
     /**
-     * Find a card by its label, e.g. "3.42", or a whole deck by its number.
+     * Find a card by its label, e.g. "342" for card 42 of deck 3, or a whole deck by its number.
      *
      * @param  Builder<QrCard>  $query
      * @return Builder<QrCard>
      */
     private static function search(Builder $query, string $search): Builder
     {
-        if (preg_match('/^(\d{1,9})(?:\.(\d{1,3}))?$/', trim($search), $matches) !== 1) {
+        if (preg_match('/^\d{1,9}$/', trim($search)) !== 1) {
             return $query->whereRaw('1 = 0');
         }
 
-        return $query
-            ->where('deck', (int) $matches[1])
-            ->when(isset($matches[2]), fn (Builder $query): Builder => $query->where('number', (int) $matches[2]));
+        $value = (int) trim($search);
+
+        return $query->where(fn (Builder $query): Builder => $query
+            ->where('deck', $value)
+            ->orWhere(fn (Builder $query): Builder => $query
+                ->where('deck', intdiv($value, 100))
+                ->where('number', $value % 100)));
     }
 
     private static function usage(int $deck): string

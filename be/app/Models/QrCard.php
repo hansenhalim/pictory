@@ -15,9 +15,10 @@ use Throwable;
 /**
  * A pre-printed card whose QR code links to the soft copies of every session assigned to it.
  *
- * Cards are printed in decks of 100 and kept by customers. The operator assigns a session to a
- * card at the kiosk by typing its label, e.g. "3.42" for card 42 of deck 3, so a customer with
- * several sessions finds all of them behind one card.
+ * Cards are printed in decks of 100, numbered 00 to 99, and kept by customers. The operator
+ * assigns a session to a card at the kiosk by typing its label: the deck followed by the card's
+ * two digits, e.g. "342" for card 42 of deck 3. A customer with several sessions finds all of
+ * them behind one card.
  *
  * @property-read string $label
  */
@@ -30,9 +31,9 @@ class QrCard extends Model
     public const int DECK_SIZE = 100;
 
     /**
-     * A label as the kiosk sends it: no leading zeros, and short enough to fit the columns.
+     * A label as the kiosk sends it: the deck without leading zeros, then the card's two digits.
      */
-    public const string LABEL_PATTERN = '/^([1-9]\d{0,8})\.([1-9]\d{0,2})$/';
+    public const string LABEL_PATTERN = '/^([1-9]\d{0,8})(\d{2})$/';
 
     /**
      * Generate the cards of the next deck.
@@ -47,7 +48,7 @@ class QrCard extends Model
                 $deck = (self::query()->max('deck') ?? 0) + 1;
                 $now = now();
 
-                self::query()->insert(collect(range(1, self::DECK_SIZE))
+                self::query()->insert(collect(range(0, self::DECK_SIZE - 1))
                     ->map(fn (int $number): array => [
                         'deck' => $deck,
                         'number' => $number,
@@ -95,7 +96,7 @@ class QrCard extends Model
      */
     protected function label(): Attribute
     {
-        return Attribute::get(fn (): string => "{$this->deck}.{$this->number}");
+        return Attribute::get(fn (): string => sprintf('%d%02d', $this->deck, $this->number));
     }
 
     /**
