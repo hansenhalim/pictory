@@ -25,12 +25,19 @@ Route::get('/C/{uuid}', [SharedQrCardController::class, 'show'])->whereUuid('uui
 Route::middleware('auth')->group(function () {
     Route::get('/admin/qr-cards/print/{deck}', [QrDeckPrintController::class, 'show'])->whereNumber('deck')->name('qr-cards.print');
 
+    /*
+     * The kiosk is cross-origin isolated so it can drive a DSLR with web-gphoto2 (see fe/vite.config.ts).
+     */
     Route::get('/kiosk/{any?}', function () {
         $index = public_path('kiosk/index.html');
 
         abort_unless(is_file($index), 404, 'The kiosk has not been built. Run `npm run build` in fe/.');
 
-        return response()->file($index, ['Cache-Control' => 'no-cache']);
+        return response()->file($index, [
+            'Cache-Control' => 'no-cache',
+            'Cross-Origin-Opener-Policy' => 'same-origin',
+            'Cross-Origin-Embedder-Policy' => 'credentialless',
+        ]);
     })->where('any', '.*')->name('kiosk');
 
     Route::prefix('api')->name('api.')->group(function () {

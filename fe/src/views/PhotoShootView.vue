@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useObjectUrl } from '@vueuse/core'
 import KioskButton from '@/components/KioskButton.vue'
 import { copy } from '@/copy'
-import { WebcamCamera } from '@/lib/camera'
+import { type Camera, DslrCamera, WebcamCamera } from '@/lib/camera'
 import { useFramesStore } from '@/stores/frames'
 import { useSessionStore } from '@/stores/session'
 import { useSettingsStore } from '@/stores/settings'
@@ -14,12 +14,16 @@ const framesStore = useFramesStore()
 const sessionStore = useSessionStore()
 const { settings } = useSettingsStore()
 
-const camera = new WebcamCamera({ deviceId: settings.cameraDeviceId, mirror: settings.mirror })
+const camera: Camera =
+  settings.cameraSource === 'dslr'
+    ? new DslrCamera({ mirror: settings.mirror })
+    : new WebcamCamera({ deviceId: settings.cameraDeviceId, mirror: settings.mirror })
 const video = useTemplateRef('video')
 
 const isCameraUnavailable = ref(false)
 const countdown = ref(0)
 const isCountingDown = ref(false)
+const hasCaptureFailed = ref(false)
 const captured = ref<Blob | null>(null)
 const capturedUrl = useObjectUrl(captured)
 const isFinishing = ref(false)
@@ -95,6 +99,7 @@ function wait(milliseconds: number) {
 
 async function start() {
   isCountingDown.value = true
+  hasCaptureFailed.value = false
 
   for (let seconds = settings.countdownSeconds; seconds > 0; seconds--) {
     countdown.value = seconds
@@ -106,8 +111,16 @@ async function start() {
   }
 
   countdown.value = 0
-  captured.value = await camera.capture()
-  isCountingDown.value = false
+
+  // A DSLR can refuse to shoot, e.g. when it cannot focus, so the customer may try again.
+  try {
+    captured.value = await camera.capture()
+  } catch (error) {
+    console.error(error)
+    hasCaptureFailed.value = true
+  } finally {
+    isCountingDown.value = false
+  }
 }
 
 function retake() {
@@ -217,9 +230,10 @@ onBeforeUnmount(() => {
         <KioskButton v-else @click="save">{{ copy.save }}</KioskButton>
       </template>
 
-      <KioskButton v-else-if="!isCountingDown" :disabled="isCameraUnavailable" @click="start">
-        {{ copy.start }}
-      </KioskButton>
+      <template v-else-if="!isCountingDown">
+        <p v-if="hasCaptureFailed" class="text-xl text-red-400">{{ copy.captureFailed }}</p>
+        <KioskButton :disabled="isCameraUnavailable" @click="start">{{ copy.start }}</KioskButton>
+      </template>
     </div>
   </main>
 </template>

@@ -20,13 +20,16 @@
     "pinia": "^4.0.3",
     "qrcode": "^1.5.4",
     "vue": "^3.5.42",
-    "vue-router": "^5.3.1"
+    "vue-router": "^5.3.1",
+    "web-gphoto2": "^0.4.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@tsconfig/node24": "^24.0.5",
+    "@types/emscripten": "^1.41.6",
     "@types/node": "^24.13.4",
     "@types/qrcode": "^1.5.6",
+    "@types/w3c-web-usb": "^1.0.14",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/tsconfig": "^0.9.1",

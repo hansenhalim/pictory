@@ -5,7 +5,7 @@ import { useIntervalFn, useNow, useOnline } from '@vueuse/core'
 import { checkAgent } from '@/lib/agent'
 import PrintThumbnail from '@/components/PrintThumbnail.vue'
 import ReprintDialog from '@/components/ReprintDialog.vue'
-import { listCameras } from '@/lib/camera'
+import { chooseDslr, DslrCamera, listCameras, listDslrs } from '@/lib/camera'
 import { useDeviceStore } from '@/stores/device'
 import { useFramesStore } from '@/stores/frames'
 import { usePrintsStore } from '@/stores/prints'
@@ -26,6 +26,9 @@ const now = useNow({ scheduler: (tick) => useIntervalFn(tick, 1000) })
 
 const cameras = ref<MediaDeviceInfo[]>([])
 const cameraError = ref<string | null>(null)
+const dslrs = ref<string[]>([])
+const dslrStatus = ref<{ isReady: boolean; message: string } | null>(null)
+const isTestingDslr = ref(false)
 const printerStatus = ref<{ isReady: boolean; message: string } | null>(null)
 const isTestingPrinter = ref(false)
 const isRetryingUploads = ref(false)
@@ -94,6 +97,11 @@ async function retryUploads() {
   }
 }
 
+const cameraSources = [
+  { value: 'webcam', label: 'Webcam' },
+  { value: 'dslr', label: 'DSLR' },
+] as const
+
 const themes = [
   { value: 'dark', label: 'Dark' },
   { value: 'light', label: 'Light' },
@@ -121,6 +129,50 @@ async function loadCameras() {
     cameras.value = await listCameras()
   } catch (error) {
     cameraError.value = errorMessage(error)
+  }
+}
+
+async function loadDslrs() {
+  try {
+    dslrs.value = await listDslrs()
+  } catch (error) {
+    dslrStatus.value = { isReady: false, message: errorMessage(error) }
+  }
+}
+
+/** Closing Chrome's device list without picking a camera is not worth reporting. */
+async function chooseCamera() {
+  dslrStatus.value = null
+
+  try {
+    await chooseDslr()
+  } catch (error) {
+    if (!(error instanceof DOMException && error.name === 'NotFoundError')) {
+      dslrStatus.value = { isReady: false, message: errorMessage(error) }
+    }
+  }
+
+  await loadDslrs()
+}
+
+/** Connect and take one live view frame, which is what the shoot screen needs first. */
+async function testDslr() {
+  isTestingDslr.value = true
+  dslrStatus.value = null
+
+  const camera = new DslrCamera({ mirror: false })
+
+  try {
+    await camera.start()
+    dslrStatus.value = { isReady: true, message: 'The camera is ready.' }
+  } catch (error) {
+    dslrStatus.value = {
+      isReady: false,
+      message: `Could not start the camera. ${errorMessage(error)}`,
+    }
+  } finally {
+    camera.stop()
+    isTestingDslr.value = false
   }
 }
 
@@ -159,6 +211,7 @@ onMounted(() => {
   void deviceStore.requestPersistentStorage()
   void framesStore.sync().catch(() => {})
   void loadCameras()
+  void loadDslrs()
 })
 </script>
 
@@ -237,9 +290,28 @@ onMounted(() => {
     </section>
 
     <section class="space-y-4 rounded-lg bg-neutral-900 p-6">
-      <h2 class="font-semibold">Camera</h2>
+      <div class="flex items-center justify-between gap-4">
+        <h2 class="font-semibold">Camera</h2>
 
-      <label class="block space-y-1">
+        <div class="flex rounded-lg bg-neutral-800 p-1">
+          <button
+            v-for="source in cameraSources"
+            :key="source.value"
+            type="button"
+            class="rounded-md px-6 py-2 transition"
+            :class="
+              settingsStore.settings.cameraSource === source.value
+                ? 'bg-neutral-600 font-semibold'
+                : 'text-neutral-400'
+            "
+            @click="settingsStore.settings.cameraSource = source.value"
+          >
+            {{ source.label }}
+          </button>
+        </div>
+      </div>
+
+      <label v-if="settingsStore.settings.cameraSource === 'webcam'" class="block space-y-1">
         <span class="text-sm text-neutral-400">Device</span>
         <select
           v-model="settingsStore.settings.cameraDeviceId"
@@ -252,6 +324,33 @@ onMounted(() => {
         </select>
         <span v-if="cameraError" class="text-sm text-red-400">{{ cameraError }}</span>
       </label>
+
+      <div v-else class="space-y-1">
+        <span class="text-sm text-neutral-400">Device</span>
+        <div class="flex gap-3">
+          <p class="min-w-0 flex-1 truncate rounded bg-neutral-800 px-3 py-2">
+            {{ dslrs.length > 0 ? dslrs.join(', ') : 'No allowed camera is connected' }}
+          </p>
+          <button type="button" class="rounded bg-neutral-700 px-4 py-2" @click="chooseCamera">
+            Choose
+          </button>
+          <button
+            type="button"
+            class="rounded bg-neutral-700 px-4 py-2 disabled:opacity-40"
+            :disabled="isTestingDslr"
+            @click="testDslr"
+          >
+            {{ isTestingDslr ? 'Testing…' : 'Test camera' }}
+          </button>
+        </div>
+        <p
+          v-if="dslrStatus"
+          class="text-sm"
+          :class="dslrStatus.isReady ? 'text-green-400' : 'text-red-400'"
+        >
+          {{ dslrStatus.message }}
+        </p>
+      </div>
 
       <label class="flex items-center gap-3">
         <input v-model="settingsStore.settings.mirror" type="checkbox" class="size-5" />

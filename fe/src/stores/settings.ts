@@ -9,6 +9,8 @@ const THEME_COLORS = { dark: '#0a0a0a', light: '#fafafa' }
 export interface KioskSettings {
   /** Frames offered to customers, in the order they are shown. */
   enabledFrameIds: number[]
+  /** The webcam picked by `cameraDeviceId`, or the DSLR the operator allowed over USB. */
+  cameraSource: 'webcam' | 'dslr'
   cameraDeviceId: string
   mirror: boolean
   countdownSeconds: number
@@ -23,6 +25,7 @@ export const useSettingsStore = defineStore('settings', () => {
     'pictory.settings',
     {
       enabledFrameIds: [],
+      cameraSource: 'webcam',
       cameraDeviceId: '',
       mirror: true,
       countdownSeconds: 3,

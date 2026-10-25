@@ -27,6 +27,16 @@ const backendPaths = [
   '/C/',
 ]
 
+/**
+ * web-gphoto2, which drives a DSLR, shares memory with its worker threads. Chrome allows that
+ * only on a cross-origin isolated page, so whatever serves /kiosk/ sends these headers.
+ * Credentialless still loads cross-origin resources that lack a CORP header, minus cookies.
+ */
+const crossOriginIsolation = {
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'credentialless',
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   base: '/kiosk/',
@@ -53,7 +63,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
         navigateFallback: '/kiosk/index.html',
         navigateFallbackAllowlist: [/^\/kiosk(\/|$)/],
         cleanupOutdatedCaches: true,
@@ -63,7 +73,15 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // The WebAssembly module behind web-gphoto2's wrapper, which its package does not export.
+      'web-gphoto2/libapi': fileURLToPath(
+        new URL('./node_modules/web-gphoto2/build/libapi.mjs', import.meta.url),
+      ),
     },
+  },
+  // Pre-bundling would move web-gphoto2 away from the wasm and worker files it loads beside it.
+  optimizeDeps: {
+    exclude: ['web-gphoto2'],
   },
   build: {
     outDir: '../be/public/kiosk',
@@ -72,6 +90,8 @@ export default defineConfig({
   server: {
     port: 5174,
     strictPort: true,
+    // Vite sends these only with what it serves itself, not with Laravel's proxied pages.
+    headers: crossOriginIsolation,
     proxy: Object.fromEntries(
       backendPaths.map((path) => [path, { target: backendUrl, changeOrigin: false }]),
     ),

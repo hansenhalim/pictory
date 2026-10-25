@@ -8,7 +8,8 @@
 
     // Path mapping for cleaner imports.
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "web-gphoto2/libapi": ["./node_modules/web-gphoto2/build/libapi.mjs.d.ts"]
     },
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
