@@ -24,11 +24,15 @@ class RenderClipPaper implements ShouldQueue
 {
     use Queueable;
 
-    /** How long each clip takes to fade through white into its photo, overlapping its end. */
+    /**
+     * How long each clip takes to fade through white into its photo. The fade starts once the
+     * clip has played to its end, the moment of the photo, holding that last frame still under
+     * it; overlapping the clip instead would skip its last motion and make the photo jump.
+     */
     private const float FADE_SECONDS = 0.5;
 
     /** How long the paper holds still after the last slot has turned into its photo. */
-    private const float HOLD_SECONDS = 2;
+    private const float HOLD_SECONDS = 1;
 
     private const int FRAME_RATE = 30;
 
@@ -102,9 +106,12 @@ class RenderClipPaper implements ShouldQueue
     {
         return (float) Process::run([
             config('services.ffmpeg.ffprobe_binary'),
-            '-v', 'error',
-            '-show_entries', 'format=duration',
-            '-of', 'csv=p=0',
+            '-v',
+            'error',
+            '-show_entries',
+            'format=duration',
+            '-of',
+            'csv=p=0',
             $path,
         ])->throw()->output();
     }
@@ -119,12 +126,17 @@ class RenderClipPaper implements ShouldQueue
     private function ffmpegCommand(string $framePath, array $slots, string $outputPath): array
     {
         [$width, $height] = getimagesize($framePath);
-        $seconds = $this->number(max(array_column($slots, 'clipSeconds')) + self::HOLD_SECONDS);
+        $seconds = $this->number(max(array_column($slots, 'clipSeconds')) + self::FADE_SECONDS + self::HOLD_SECONDS);
         $still = ['-loop', '1', '-framerate', (string) self::FRAME_RATE, '-t', $seconds];
 
         $inputs = [
-            '-f', 'lavfi', '-i', "color=white:s={$width}x{$height}:r=".self::FRAME_RATE.":d={$seconds}",
-            ...$still, '-i', $framePath,
+            '-f',
+            'lavfi',
+            '-i',
+            "color=white:s={$width}x{$height}:r=".self::FRAME_RATE.":d={$seconds}",
+            ...$still,
+            '-i',
+            $framePath,
         ];
         $filters = [];
         $overlays = [];
@@ -138,9 +150,9 @@ class RenderClipPaper implements ShouldQueue
             // of the first and scaled for any other.
             ['width' => $slotWidth, 'height' => $slotHeight] = $slot['placements'][0];
             $fit = $this->coverFilter($slotWidth, $slotHeight);
-            $fadeOffset = $this->number(max(0, $slot['clipSeconds'] - self::FADE_SECONDS));
+            $fadeOffset = $this->number($slot['clipSeconds']);
 
-            $filters[] = "[{$clipInput}:v]{$fit}[clip{$index}]";
+            $filters[] = "[{$clipInput}:v]{$fit},tpad=stop_mode=clone:stop_duration=".self::FADE_SECONDS."[clip{$index}]";
             $filters[] = "[{$photoInput}:v]{$fit}[photo{$index}]";
             $filters[] = "[clip{$index}][photo{$index}]xfade=transition=fadewhite:duration=".self::FADE_SECONDS
                 .":offset={$fadeOffset},trim=duration={$seconds}"
@@ -172,18 +184,28 @@ class RenderClipPaper implements ShouldQueue
 
         return [
             config('services.ffmpeg.binary'),
-            '-v', 'error',
+            '-v',
+            'error',
             '-y',
             ...$inputs,
-            '-filter_complex', implode(';', $filters),
-            '-map', '[out]',
-            '-t', $seconds,
-            '-r', (string) self::FRAME_RATE,
-            '-c:v', 'libx264',
-            '-preset', 'medium',
-            '-crf', '20',
-            '-pix_fmt', 'yuv420p',
-            '-movflags', '+faststart',
+            '-filter_complex',
+            implode(';', $filters),
+            '-map',
+            '[out]',
+            '-t',
+            $seconds,
+            '-r',
+            (string) self::FRAME_RATE,
+            '-c:v',
+            'libx264',
+            '-preset',
+            'medium',
+            '-crf',
+            '20',
+            '-pix_fmt',
+            'yuv420p',
+            '-movflags',
+            '+faststart',
             '-an',
             $outputPath,
         ];
