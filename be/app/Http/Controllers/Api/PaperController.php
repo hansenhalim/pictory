@@ -49,17 +49,14 @@ class PaperController extends Controller
         $frameId = Frame::query()->whereKey($request->integer('frame_id'))->value('id');
 
         try {
-            $replacementCode = DB::transaction(function () use ($request, $ref, $paperPath, $photos, $frameId): ?string {
+            /** @var array{Paper, ?string} $stored */
+            $stored = DB::transaction(function () use ($request, $ref, $paperPath, $photos, $frameId): array {
                 $paper = Paper::query()->create(['file_path' => $paperPath, 'ref' => $ref, 'frame_id' => $frameId]);
 
                 $paper->photos()->createMany($photos);
 
-                if ($paper->canRenderClipPaper()) {
-                    RenderClipPaper::dispatch($paper)->afterCommit();
-                }
-
                 if (! $request->filled('code')) {
-                    return null;
+                    return [$paper, null];
                 }
 
                 $isCodeClaimed = ShortCode::query()
@@ -71,7 +68,7 @@ class PaperController extends Controller
                     throw ValidationException::withMessages(['code' => 'The code is not reserved or has already been used.']);
                 }
 
-                return ShortCode::reserve(1)->sole()->code;
+                return [$paper, ShortCode::reserve(1)->sole()->code];
             });
         } catch (UniqueConstraintViolationException) {
             $disk->delete($storedPaths);
@@ -81,6 +78,18 @@ class PaperController extends Controller
             $disk->delete($storedPaths);
 
             throw $exception;
+        }
+
+        [$paper, $replacementCode] = $stored;
+
+        // A clip paper that fails to render or queue never fails the upload, which is already
+        // stored; on the sync queue it renders right here. The admin can render it again.
+        if ($paper->canRenderClipPaper()) {
+            // A block, not an arrow function: a pending dispatch is only sent once it is
+            // destructed, which has to happen inside `rescue`.
+            rescue(function () use ($paper): void {
+                RenderClipPaper::dispatch($paper);
+            });
         }
 
         return $this->stored($ref, $replacementCode, status: 201);
