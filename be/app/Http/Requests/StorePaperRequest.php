@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Frame;
 use App\Models\ShortCode;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -20,7 +21,7 @@ class StorePaperRequest extends FormRequest
             'ref' => ['required', 'uuid'],
             'code' => ['nullable', 'string', 'size:'.ShortCode::LENGTH],
             'paper' => ['required', 'image', 'mimes:png', 'max:20480'],
-            'photos' => ['required', 'array', 'min:1', 'max:20'],
+            'photos' => ['required', 'array', 'min:1', 'max:'.Frame::MAX_SLOTS],
             'photos.*' => ['required', 'image', 'mimes:jpg,jpeg', 'max:10240'],
         ];
     }
