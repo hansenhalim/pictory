@@ -51,9 +51,7 @@ class PaperController extends Controller
         try {
             /** @var array{Paper, ?string} $stored */
             $stored = DB::transaction(function () use ($request, $ref, $paperPath, $photos, $frameId): array {
-                $paper = Paper::query()->create(['file_path' => $paperPath, 'ref' => $ref, 'frame_id' => $frameId]);
-
-                $paper->photos()->createMany($photos);
+                $paper = Paper::query()->create(['ref' => $ref, 'frame_id' => $frameId, 'file_path' => $paperPath, 'photos' => $photos]);
 
                 if (! $request->filled('code')) {
                     return [$paper, null];

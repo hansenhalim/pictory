@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\Paper;
-use App\Models\Photo;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Http\File;
@@ -52,7 +51,7 @@ class RenderClipPaper implements ShouldQueue
 
     public function handle(): void
     {
-        $paper = $this->paper->load(['frame', 'photos']);
+        $paper = $this->paper->load('frame');
 
         // The frame may have been deleted or edited since the session was shot.
         if (! $paper->canRenderClipPaper()) {
@@ -67,14 +66,12 @@ class RenderClipPaper implements ShouldQueue
             $framePath = "{$directory}/frame.png";
             Files::put($framePath, $disk->get($paper->frame->file_path));
 
-            $slots = $paper->photos
-                ->sortBy('id')
-                ->values()
-                ->map(function (Photo $photo, int $index) use ($disk, $directory, $paper): array {
+            $slots = collect($paper->photos)
+                ->map(function (array $photo, int $index) use ($disk, $directory, $paper): array {
                     $clipPath = "{$directory}/clip-{$index}.mp4";
                     $photoPath = "{$directory}/photo-{$index}.jpg";
-                    Files::put($clipPath, $disk->get($photo->clip_path));
-                    Files::put($photoPath, $disk->get($photo->file_path));
+                    Files::put($clipPath, $disk->get($photo['clip_path']));
+                    Files::put($photoPath, $disk->get($photo['file_path']));
 
                     return [
                         'clip' => $clipPath,

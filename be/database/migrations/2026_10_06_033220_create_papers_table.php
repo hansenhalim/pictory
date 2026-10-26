@@ -11,10 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('photos', function (Blueprint $table) {
+        Schema::create('papers', function (Blueprint $table) {
             $table->id();
+            $table->uuid('ref')->unique();
+            $table->foreignId('frame_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('qr_card_id')->nullable()->constrained();
             $table->string('file_path');
-            $table->uuid('ref')->index();
+            $table->string('clip_path')->nullable();
+            $table->json('photos');
             $table->timestamps();
         });
     }
@@ -24,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('photos');
+        Schema::dropIfExists('papers');
     }
 };

@@ -7,13 +7,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property string|null $clip_path The clip paper: the paper as a video, its slots playing their behind-the-scenes clips.
+ * @property non-empty-list<array{file_path: string, clip_path: string|null}> $photos The photos taken in the session, one per slot in slot order, each with the behind-the-scenes clip recorded during the countdown before it, if the kiosk made one.
  */
-#[Fillable(['file_path', 'clip_path', 'ref', 'frame_id'])]
+#[Fillable(['ref', 'frame_id', 'file_path', 'clip_path', 'photos'])]
 class Paper extends Model
 {
     /** @use HasFactory<PaperFactory> */
@@ -27,16 +27,6 @@ class Paper extends Model
     public function frame(): BelongsTo
     {
         return $this->belongsTo(Frame::class);
-    }
-
-    /**
-     * Get the photos taken in the same session as this paper.
-     *
-     * @return HasMany<Photo, $this>
-     */
-    public function photos(): HasMany
-    {
-        return $this->hasMany(Photo::class, 'ref', 'ref');
     }
 
     /**
@@ -66,7 +56,19 @@ class Paper extends Model
     public function canRenderClipPaper(): bool
     {
         return $this->frame !== null
-            && $this->photos->count() === count($this->frame->slots)
-            && $this->photos->every(fn (Photo $photo): bool => $photo->clip_path !== null);
+            && count($this->photos) === count($this->frame->slots)
+            && collect($this->photos)->every(fn (array $photo): bool => $photo['clip_path'] !== null);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'photos' => 'array',
+        ];
     }
 }

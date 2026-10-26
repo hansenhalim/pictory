@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Papers\Tables;
 
 use App\Filament\Resources\QrCards\Tables\QrCardsTable;
+use App\Models\Paper;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\ViewAction;
@@ -25,9 +26,9 @@ class PapersTable
                 TextColumn::make('qrCard.label')
                     ->label('Card')
                     ->placeholder('—'),
-                TextColumn::make('photos_count')
+                TextColumn::make('photos')
                     ->label('Photos')
-                    ->counts('photos'),
+                    ->state(fn (Paper $record): int => count($record->photos)),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),

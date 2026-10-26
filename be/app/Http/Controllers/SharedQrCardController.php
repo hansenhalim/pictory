@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Paper;
-use App\Models\Photo;
 use App\Models\QrCard;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +17,7 @@ class SharedQrCardController extends Controller
     public function show(string $uuid): View
     {
         $card = QrCard::query()
-            ->with(['papers' => fn (Builder $query) => $query->latest()->latest('id')->with('photos')])
+            ->with(['papers' => fn (Builder $query) => $query->latest()->latest('id')])
             ->where('uuid', strtolower($uuid))
             ->firstOrFail();
 
@@ -33,8 +32,8 @@ class SharedQrCardController extends Controller
                     'downloadName' => "pictory-{$card->label}-".($card->papers->count() - $index),
                     'paperUrl' => $disk->temporaryUrl($paper->file_path, $expiresAt),
                     'clipUrl' => $paper->clip_path ? $disk->temporaryUrl($paper->clip_path, $expiresAt) : null,
-                    'photoUrls' => $paper->photos
-                        ->map(fn (Photo $photo): string => $disk->temporaryUrl($photo->file_path, $expiresAt))
+                    'photoUrls' => collect($paper->photos)
+                        ->map(fn (array $photo): string => $disk->temporaryUrl($photo['file_path'], $expiresAt))
                         ->all(),
                 ])
                 ->all(),

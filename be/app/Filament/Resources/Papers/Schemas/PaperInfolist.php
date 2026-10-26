@@ -26,14 +26,15 @@ class PaperInfolist
                         ->label('Card')
                         ->url(fn (Paper $record): ?string => $record->qrCard ? route('qr-cards.shared', $record->qrCard->uuid) : null, shouldOpenInNewTab: true)
                         ->placeholder('Not assigned to a card.'),
-                    ImageEntry::make('photos.file_path')
+                    ImageEntry::make('photos')
                         ->label('Photos')
+                        ->state(fn (Paper $record): array => array_column($record->photos, 'file_path'))
                         ->url(fn (ImageEntry $component, string $state): ?string => $component->getImageUrl($state), shouldOpenInNewTab: true)
                         ->placeholder('No photos from this session.'),
                     ViewEntry::make('clips')
                         ->label('Clips')
                         ->view('filament.papers.videos')
-                        ->state(fn (Paper $record): array => $record->photos
+                        ->state(fn (Paper $record): array => collect($record->photos)
                             ->pluck('clip_path')
                             ->filter()
                             ->map(fn (string $path): string => Storage::disk(config('filament.default_filesystem_disk'))->temporaryUrl($path, now()->addHour()))
