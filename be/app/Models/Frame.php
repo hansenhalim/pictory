@@ -24,7 +24,7 @@ class Frame extends Model
     /**
      * The most photos a frame can hold, and so the most a kiosk session uploads.
      */
-    public const int MAX_SLOTS = 6;
+    public const int MAX_SLOTS = 4;
 
     /**
      * The model's default values for attributes.
