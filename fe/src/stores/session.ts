@@ -20,6 +20,8 @@ export const useSessionStore = defineStore('session', () => {
   const sessionRef = ref<string | null>(null)
   const frame = ref<Frame | null>(null)
   const photos = ref<Blob[]>([])
+  /** Each photo's behind-the-scenes clip, or null where none was made. */
+  const clips = ref<(Blob | null)[]>([])
   /** Uploaded for the soft copy page; has no QR codes. */
   const softCopy = ref<Blob | null>(null)
   /** Sent to the printer; carries the QR codes. */
@@ -36,14 +38,16 @@ export const useSessionStore = defineStore('session', () => {
     sessionRef.value = crypto.randomUUID()
     frame.value = selectedFrame
     photos.value = []
+    clips.value = []
     softCopy.value = null
     printCopy.value = null
     code.value = null
     card.value = null
   }
 
-  function addPhoto(photo: Blob) {
+  function addPhoto(photo: Blob, clip: Blob | null) {
     photos.value = [...photos.value, photo]
+    clips.value = [...clips.value, clip]
   }
 
   /**
@@ -75,6 +79,7 @@ export const useSessionStore = defineStore('session', () => {
       code: code.value,
       paper: paper.softCopy,
       photos: [...photos.value],
+      clips: [...clips.value],
       createdAt: Date.now(),
     })
 
@@ -105,6 +110,7 @@ export const useSessionStore = defineStore('session', () => {
     sessionRef.value = null
     frame.value = null
     photos.value = []
+    clips.value = []
     softCopy.value = null
     printCopy.value = null
     code.value = null

@@ -44,6 +44,8 @@ export interface PendingUpload {
   /** The soft copy, without QR codes. */
   paper: Blob
   photos: Blob[]
+  /** Each photo's behind-the-scenes clip, or null where none was made. Missing on sessions queued before clips. */
+  clips?: (Blob | null)[]
   createdAt: number
 }
 

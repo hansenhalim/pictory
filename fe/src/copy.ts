@@ -7,6 +7,7 @@ export const copy = {
   finish: 'Selesai',
   processing: 'Memproses…',
   cameraUnavailable: 'Kamera tidak tersedia',
+  recording: 'REC',
   captureFailed: 'Gagal mengambil foto. Coba lagi.',
   processingFailed: 'Gagal memproses foto. Coba lagi.',
   prints: 'Jumlah cetak',

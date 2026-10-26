@@ -14,6 +14,8 @@ export interface KioskSettings {
   cameraDeviceId: string
   mirror: boolean
   countdownSeconds: number
+  /** Record the countdown before each photo as a behind-the-scenes clip for the operator. */
+  recordClips: boolean
   agentUrl: string
   /** What the result screen offers for the soft copy: the short code's QR, or assigning a QR card. */
   softCopyLink: 'qr' | 'card'
@@ -29,6 +31,7 @@ export const useSettingsStore = defineStore('settings', () => {
       cameraDeviceId: '',
       mirror: true,
       countdownSeconds: 3,
+      recordClips: true,
       agentUrl: 'http://127.0.0.1:8001',
       softCopyLink: 'qr',
       theme: 'dark',
