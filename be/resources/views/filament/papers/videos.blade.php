@@ -1,19 +1,19 @@
 @php
     /**
-     * The behind-the-scenes clips of a session, one muted, looping player per clip.
+     * One muted, looping player per video, like a session's behind-the-scenes clips.
      *
-     * @var list<string> $clipUrls
+     * @var list<string> $videoUrls
      */
 
-    $clipUrls = $getState() ?? [];
+    $videoUrls = $getState() ?? [];
 @endphp
 
 <x-dynamic-component :component="$getEntryWrapperView()" :entry="$entry">
-    @if (filled($clipUrls))
+    @if (filled($videoUrls))
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.75rem;">
-            @foreach ($clipUrls as $clipUrl)
+            @foreach ($videoUrls as $videoUrl)
                 <video
-                    src="{{ $clipUrl }}"
+                    src="{{ $videoUrl }}"
                     controls
                     muted
                     loop

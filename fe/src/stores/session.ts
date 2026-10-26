@@ -76,6 +76,7 @@ export const useSessionStore = defineStore('session', () => {
 
     await uploadsStore.enqueue({
       ref: sessionRef.value,
+      frameId: currentFrame.id,
       code: code.value,
       paper: paper.softCopy,
       photos: [...photos.value],

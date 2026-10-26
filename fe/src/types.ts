@@ -40,6 +40,8 @@ export interface PrintRecord {
 /** A finished session waiting to be uploaded to the backend. */
 export interface PendingUpload {
   ref: string
+  /** The frame the session was shot with. Missing on sessions queued before it was sent. */
+  frameId?: number
   code: string | null
   /** The soft copy, without QR codes. */
   paper: Blob

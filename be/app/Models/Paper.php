@@ -10,11 +10,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['file_path', 'ref'])]
+/**
+ * @property string|null $clip_path The clip paper: the paper as a video, its slots playing their behind-the-scenes clips.
+ */
+#[Fillable(['file_path', 'clip_path', 'ref', 'frame_id'])]
 class Paper extends Model
 {
     /** @use HasFactory<PaperFactory> */
     use HasFactory;
+
+    /**
+     * Get the frame the session was shot with, unless it was deleted since.
+     *
+     * @return BelongsTo<Frame, $this>
+     */
+    public function frame(): BelongsTo
+    {
+        return $this->belongsTo(Frame::class);
+    }
 
     /**
      * Get the photos taken in the same session as this paper.
@@ -44,5 +57,16 @@ class Paper extends Model
     public function shortCode(): HasOne
     {
         return $this->hasOne(ShortCode::class);
+    }
+
+    /**
+     * Whether a clip paper can be rendered: the frame still exists, and every one of its slots
+     * has a photo with a clip.
+     */
+    public function canRenderClipPaper(): bool
+    {
+        return $this->frame !== null
+            && $this->photos->count() === count($this->frame->slots)
+            && $this->photos->every(fn (Photo $photo): bool => $photo->clip_path !== null);
     }
 }

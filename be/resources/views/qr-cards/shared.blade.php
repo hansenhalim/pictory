@@ -3,7 +3,7 @@
      * The soft copy page a QR card opens: every session assigned to the card, newest first.
      * Until the first one arrives, it shows a waiting message and reloads itself.
      *
-     * @var list<array{takenAt: \Illuminate\Support\Carbon, downloadName: string, paperUrl: string, photoUrls: list<string>}> $sessions
+     * @var list<array{takenAt: \Illuminate\Support\Carbon, downloadName: string, paperUrl: string, clipUrl: string|null, photoUrls: list<string>}> $sessions
      */
 @endphp
 
@@ -31,6 +31,7 @@
                     <x-soft-copy
                         :download-name="$session['downloadName']"
                         :paper-url="$session['paperUrl']"
+                        :clip-url="$session['clipUrl']"
                         :photo-urls="$session['photoUrls']"
                     />
                 </article>

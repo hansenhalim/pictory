@@ -60,6 +60,11 @@ export const useUploadsStore = defineStore('uploads', () => {
   async function upload(pending: PendingUpload) {
     const form = new FormData()
     form.append('ref', pending.ref)
+
+    if (pending.frameId !== undefined) {
+      form.append('frame_id', String(pending.frameId))
+    }
+
     form.append('paper', pending.paper, 'paper.png')
     pending.photos.forEach((photo, index) =>
       form.append('photos[]', photo, `photo-${index + 1}.jpg`),

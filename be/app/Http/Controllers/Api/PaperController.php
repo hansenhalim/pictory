@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePaperRequest;
+use App\Jobs\RenderClipPaper;
+use App\Models\Frame;
 use App\Models\Paper;
 use App\Models\ShortCode;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -18,7 +20,8 @@ class PaperController extends Controller
 {
     /**
      * Store a kiosk session: its rendered paper, its photos and the short code printed on it.
-     * Each photo may come with a behind-the-scenes clip, sent under the photo's index.
+     * Each photo may come with a behind-the-scenes clip, sent under the photo's index. When
+     * every slot of the session's frame has one, its clip paper is rendered on the queue.
      *
      * Kiosks retry uploads until they succeed, so a session that is already stored is
      * acknowledged without storing it again. A replacement code is reserved for each
@@ -43,12 +46,17 @@ class PaperController extends Controller
             ])
             ->all();
         $storedPaths = collect($photos)->flatten()->filter()->push($paperPath)->all();
+        $frameId = Frame::query()->whereKey($request->integer('frame_id'))->value('id');
 
         try {
-            $replacementCode = DB::transaction(function () use ($request, $ref, $paperPath, $photos): ?string {
-                $paper = Paper::query()->create(['file_path' => $paperPath, 'ref' => $ref]);
+            $replacementCode = DB::transaction(function () use ($request, $ref, $paperPath, $photos, $frameId): ?string {
+                $paper = Paper::query()->create(['file_path' => $paperPath, 'ref' => $ref, 'frame_id' => $frameId]);
 
                 $paper->photos()->createMany($photos);
+
+                if ($paper->canRenderClipPaper()) {
+                    RenderClipPaper::dispatch($paper)->afterCommit();
+                }
 
                 if (! $request->filled('code')) {
                     return null;
