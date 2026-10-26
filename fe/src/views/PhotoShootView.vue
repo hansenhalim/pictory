@@ -21,6 +21,8 @@ const camera: Camera =
     : new WebcamCamera({ deviceId: settings.cameraDeviceId, mirror: settings.mirror })
 const video = useTemplateRef('video')
 
+/** Shooting waits for the camera, so the first photo and clip are not taken from an empty stream. */
+const isCameraReady = ref(false)
 const isCameraUnavailable = ref(false)
 const countdown = ref(0)
 const isCountingDown = ref(false)
@@ -199,6 +201,8 @@ onMounted(async () => {
     if (video.value) {
       video.value.srcObject = stream
     }
+
+    isCameraReady.value = true
   } catch (error) {
     console.error(error)
     isCameraUnavailable.value = true
@@ -281,7 +285,7 @@ onBeforeUnmount(() => {
 
       <template v-else-if="!isCountingDown">
         <p v-if="hasCaptureFailed" class="text-xl text-red-400">{{ copy.captureFailed }}</p>
-        <KioskButton :disabled="isCameraUnavailable" @click="start">{{ copy.start }}</KioskButton>
+        <KioskButton :disabled="!isCameraReady" @click="start">{{ copy.start }}</KioskButton>
       </template>
     </div>
   </main>
