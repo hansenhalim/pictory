@@ -5,7 +5,7 @@ import { canvasToBlob } from '@/lib/render'
 export interface Camera {
   /** Start the camera and return the live stream to preview. */
   start(): Promise<MediaStream>
-  /** Take a photo as a JPEG, mirrored when the preview is. */
+  /** Take a photo as a JPEG, mirrored when the result is set to be. */
   capture(): Promise<Blob>
   stop(): void
 }

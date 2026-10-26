@@ -17,8 +17,8 @@ const { settings } = useSettingsStore()
 
 const camera: Camera =
   settings.cameraSource === 'dslr'
-    ? new DslrCamera({ mirror: settings.mirror })
-    : new WebcamCamera({ deviceId: settings.cameraDeviceId, mirror: settings.mirror })
+    ? new DslrCamera({ mirror: settings.mirrorResult })
+    : new WebcamCamera({ deviceId: settings.cameraDeviceId, mirror: settings.mirrorResult })
 const video = useTemplateRef('video')
 
 /** Shooting waits for the camera, so the first photo and clip are not taken from an empty stream. */
@@ -115,7 +115,10 @@ async function start() {
   isCountingDown.value = true
   hasCaptureFailed.value = false
 
-  recorder = settings.recordClips && stream ? await ClipRecorder.start(stream) : null
+  recorder =
+    settings.recordClips && stream
+      ? await ClipRecorder.start(stream, { mirror: settings.mirrorResult })
+      : null
 
   if (recorder) {
     isRecording.value = true
@@ -226,7 +229,7 @@ onBeforeUnmount(() => {
           muted
           playsinline
           class="absolute inset-0 size-full object-cover"
-          :class="{ '-scale-x-100': settings.mirror }"
+          :class="{ '-scale-x-100': settings.mirrorPreview }"
         />
 
         <img
