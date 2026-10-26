@@ -22,6 +22,11 @@ class Frame extends Model
     use HasFactory;
 
     /**
+     * The most photos a frame can hold, and so the most a kiosk session uploads.
+     */
+    public const int MAX_SLOTS = 6;
+
+    /**
      * The model's default values for attributes.
      *
      * @var array<string, mixed>

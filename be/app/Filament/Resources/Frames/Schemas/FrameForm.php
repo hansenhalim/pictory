@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Frames\Schemas;
 
+use App\Models\Frame;
 use Closure;
 use Filament\Forms\Components\CodeEditor;
 use Filament\Forms\Components\CodeEditor\Enums\Language;
@@ -84,6 +85,7 @@ class FrameForm
                         ->itemLabel(fn (int $index): string => 'Photo '.($index + 1))
                         ->addActionLabel('Add slot')
                         ->minItems(1)
+                        ->maxItems(Frame::MAX_SLOTS)
                         ->required()
                         ->hidden(fn (Get $get): bool => (bool) $get('slots_as_json'))
                         ->columnSpanFull(),
@@ -166,7 +168,7 @@ class FrameForm
         }
 
         $validator = Validator::make(['slots' => $slots], [
-            'slots' => ['required', 'list'],
+            'slots' => ['required', 'list', 'max:'.Frame::MAX_SLOTS],
             'slots.*' => ['required', 'list'],
             'slots.*.*' => ['required', 'array:x,y,width,height'],
             'slots.*.*.x' => ['required', 'integer:strict'],
