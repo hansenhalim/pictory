@@ -93,6 +93,12 @@ const overlayStyle = computed(() => {
     : {}
 })
 
+/**
+ * Each slot counts down this much longer than the one before, so the clips recorded during
+ * the countdown differ in length, which post-processing uses for transitions.
+ */
+const COUNTDOWN_STEP_MS = 100
+
 function wait(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
@@ -101,13 +107,22 @@ async function start() {
   isCountingDown.value = true
   hasCaptureFailed.value = false
 
-  for (let seconds = settings.countdownSeconds; seconds > 0; seconds--) {
-    countdown.value = seconds
-    await wait(1000)
+  const deadline =
+    performance.now() + settings.countdownSeconds * 1000 + slotIndex.value * COUNTDOWN_STEP_MS
+
+  // Timed against the deadline so the ticks do not drift. The extra time goes on the first
+  // digit, keeping the rhythm of the last seconds before the shot the same for every slot.
+  let remaining = deadline - performance.now()
+
+  while (remaining > 0) {
+    countdown.value = Math.min(settings.countdownSeconds, Math.ceil(remaining / 1000))
+    await wait(remaining - (countdown.value - 1) * 1000)
 
     if (isLeaving) {
       return
     }
+
+    remaining = deadline - performance.now()
   }
 
   countdown.value = 0
