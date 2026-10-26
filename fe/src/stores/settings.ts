@@ -12,7 +12,10 @@ export interface KioskSettings {
   /** The webcam picked by `cameraDeviceId`, or the DSLR the operator allowed over USB. */
   cameraSource: 'webcam' | 'dslr'
   cameraDeviceId: string
-  mirror: boolean
+  /** Flip the live preview like a mirror. Only the screen is flipped. */
+  mirrorPreview: boolean
+  /** Flip the photos and clips themselves, and so the paper and clip paper made from them. */
+  mirrorResult: boolean
   countdownSeconds: number
   /** Record the countdown before each photo as a behind-the-scenes clip for the operator. */
   recordClips: boolean
@@ -29,7 +32,8 @@ export const useSettingsStore = defineStore('settings', () => {
       enabledFrameIds: [],
       cameraSource: 'webcam',
       cameraDeviceId: '',
-      mirror: true,
+      mirrorPreview: true,
+      mirrorResult: false,
       countdownSeconds: 3,
       recordClips: true,
       agentUrl: 'http://127.0.0.1:8001',
@@ -39,6 +43,14 @@ export const useSettingsStore = defineStore('settings', () => {
     localStorage,
     { mergeDefaults: true },
   )
+
+  // Kiosks set up before mirroring was split kept a single `mirror` setting for the preview.
+  const legacySettings = settings.value as KioskSettings & { mirror?: boolean }
+
+  if (legacySettings.mirror !== undefined) {
+    legacySettings.mirrorPreview = legacySettings.mirror
+    delete legacySettings.mirror
+  }
 
   watchEffect(() => {
     document.documentElement.dataset.theme = settings.value.theme

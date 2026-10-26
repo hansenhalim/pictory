@@ -355,8 +355,13 @@ onMounted(() => {
       </div>
 
       <label class="flex items-center gap-3">
-        <input v-model="settingsStore.settings.mirror" type="checkbox" class="size-5" />
-        <span>Mirror the preview and photos</span>
+        <input v-model="settingsStore.settings.mirrorPreview" type="checkbox" class="size-5" />
+        <span>Mirror the preview</span>
+      </label>
+
+      <label class="flex items-center gap-3">
+        <input v-model="settingsStore.settings.mirrorResult" type="checkbox" class="size-5" />
+        <span>Mirror the photos and clips</span>
       </label>
 
       <div class="space-y-1">
