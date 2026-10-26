@@ -69,14 +69,24 @@ class FrameForm
                                     TableColumn::make('X')->markAsRequired(),
                                     TableColumn::make('Y')->markAsRequired(),
                                     TableColumn::make('Width')->markAsRequired(),
-                                    TableColumn::make('Height')->markAsRequired(),
+                                    TableColumn::make('Height'),
                                 ])
                                 ->compact()
                                 ->schema([
                                     TextInput::make('x')->integer()->required(),
                                     TextInput::make('y')->integer()->required(),
-                                    TextInput::make('width')->integer()->minValue(1)->required(),
-                                    TextInput::make('height')->integer()->minValue(1)->required(),
+                                    TextInput::make('width')
+                                        ->integer()
+                                        ->minValue(1)
+                                        ->required()
+                                        ->live(onBlur: true)
+                                        ->afterStateUpdated(function (mixed $state, Set $set): void {
+                                            if (filter_var($state, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false) {
+                                                $set('height', Frame::slotHeight((int) $state));
+                                            }
+                                        }),
+                                    // Only follows the width, so a height overridden in Advanced Mode lasts until the width is edited.
+                                    TextInput::make('height')->integer()->minValue(1)->required()->disabled()->dehydrated(),
                                 ])
                                 ->addActionLabel('Add placement')
                                 ->minItems(1)

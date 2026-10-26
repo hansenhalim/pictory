@@ -27,6 +27,14 @@ class Frame extends Model
     public const int MAX_SLOTS = 4;
 
     /**
+     * Get the height of a photo slot this wide, so it is 3:2 landscape like the camera's sensor.
+     */
+    public static function slotHeight(int $width): int
+    {
+        return (int) round($width * 2 / 3);
+    }
+
+    /**
      * The model's default values for attributes.
      *
      * @var array<string, mixed>
