@@ -6,6 +6,7 @@ import { checkAgent } from '@/lib/agent'
 import PrintThumbnail from '@/components/PrintThumbnail.vue'
 import ReprintDialog from '@/components/ReprintDialog.vue'
 import { chooseDslr, DslrCamera, listCameras, listDslrs } from '@/lib/camera'
+import { canRecordClips } from '@/lib/clip'
 import { useDeviceStore } from '@/stores/device'
 import { useFramesStore } from '@/stores/frames'
 import { usePrintsStore } from '@/stores/prints'
@@ -25,6 +26,7 @@ const isOnline = useOnline()
 const now = useNow({ scheduler: (tick) => useIntervalFn(tick, 1000) })
 
 const cameras = ref<MediaDeviceInfo[]>([])
+const isClipRecordingSupported = canRecordClips()
 const cameraError = ref<string | null>(null)
 const dslrs = ref<string[]>([])
 const dslrStatus = ref<{ isReady: boolean; message: string } | null>(null)
@@ -356,6 +358,19 @@ onMounted(() => {
         <input v-model="settingsStore.settings.mirror" type="checkbox" class="size-5" />
         <span>Mirror the preview and photos</span>
       </label>
+
+      <div class="space-y-1">
+        <label class="flex items-center gap-3">
+          <input v-model="settingsStore.settings.recordClips" type="checkbox" class="size-5" />
+          <span>Record a behind-the-scenes clip of each countdown</span>
+        </label>
+        <p
+          v-if="settingsStore.settings.recordClips && !isClipRecordingSupported"
+          class="text-sm text-red-400"
+        >
+          This browser cannot record AV1 video, so no clips are made.
+        </p>
+      </div>
 
       <label class="block space-y-1">
         <span class="text-sm text-neutral-400">Countdown (seconds)</span>

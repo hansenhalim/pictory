@@ -23,6 +23,8 @@ class StorePaperRequest extends FormRequest
             'paper' => ['required', 'image', 'mimes:png', 'max:20480'],
             'photos' => ['required', 'array', 'min:1', 'max:'.Frame::MAX_SLOTS],
             'photos.*' => ['required', 'image', 'mimes:jpg,jpeg', 'max:10240'],
+            'clips' => ['nullable', 'array', 'max:'.Frame::MAX_SLOTS],
+            'clips.*' => ['file', 'mimetypes:video/mp4', 'max:5120'],
         ];
     }
 

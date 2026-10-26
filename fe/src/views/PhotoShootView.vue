@@ -5,6 +5,7 @@ import { useObjectUrl } from '@vueuse/core'
 import KioskButton from '@/components/KioskButton.vue'
 import { copy } from '@/copy'
 import { type Camera, DslrCamera, WebcamCamera } from '@/lib/camera'
+import { ClipRecorder } from '@/lib/clip'
 import { useFramesStore } from '@/stores/frames'
 import { useSessionStore } from '@/stores/session'
 import { useSettingsStore } from '@/stores/settings'
@@ -26,10 +27,15 @@ const isCountingDown = ref(false)
 const hasCaptureFailed = ref(false)
 const captured = ref<Blob | null>(null)
 const capturedUrl = useObjectUrl(captured)
+/** The behind-the-scenes clip of the countdown before `captured`. */
+const capturedClip = ref<Blob | null>(null)
+const isRecording = ref(false)
 const isFinishing = ref(false)
 const hasFinishFailed = ref(false)
 
 let isLeaving = false
+let stream: MediaStream | null = null
+let recorder: ClipRecorder | null = null
 
 const frame = computed(() => sessionStore.frame!)
 const frameImage = computed(() => framesStore.image(frame.value.id))
@@ -107,6 +113,13 @@ async function start() {
   isCountingDown.value = true
   hasCaptureFailed.value = false
 
+  recorder = settings.recordClips && stream ? await ClipRecorder.start(stream) : null
+
+  if (recorder) {
+    isRecording.value = true
+    void recorder.clip.then(() => (isRecording.value = false))
+  }
+
   const deadline =
     performance.now() + settings.countdownSeconds * 1000 + slotIndex.value * COUNTDOWN_STEP_MS
 
@@ -118,7 +131,9 @@ async function start() {
     countdown.value = Math.min(settings.countdownSeconds, Math.ceil(remaining / 1000))
     await wait(remaining - (countdown.value - 1) * 1000)
 
+    // The recorder may have started after the view began unmounting, so it is stopped here too.
     if (isLeaving) {
+      void recorder?.stop()
       return
     }
 
@@ -127,9 +142,17 @@ async function start() {
 
   countdown.value = 0
 
+  // Stopped as the shot is taken, so the clip lasts as long as the countdown.
+  const clip = recorder?.stop() ?? Promise.resolve(null)
+  recorder = null
+
   // A DSLR can refuse to shoot, e.g. when it cannot focus, so the customer may try again.
   try {
-    captured.value = await camera.capture()
+    const photo = await camera.capture()
+
+    // Saving appears with the photo, so the photo waits for the clip saved along with it.
+    capturedClip.value = await clip
+    captured.value = photo
   } catch (error) {
     console.error(error)
     hasCaptureFailed.value = true
@@ -140,11 +163,13 @@ async function start() {
 
 function retake() {
   captured.value = null
+  capturedClip.value = null
 }
 
 function save() {
-  sessionStore.addPhoto(captured.value!)
+  sessionStore.addPhoto(captured.value!, capturedClip.value)
   captured.value = null
+  capturedClip.value = null
 }
 
 async function completeSession() {
@@ -169,7 +194,7 @@ function finish() {
 
 onMounted(async () => {
   try {
-    const stream = await camera.start()
+    stream = await camera.start()
 
     if (video.value) {
       video.value.srcObject = stream
@@ -182,6 +207,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   isLeaving = true
+  void recorder?.stop()
   camera.stop()
 })
 </script>
@@ -221,6 +247,14 @@ onBeforeUnmount(() => {
         class="absolute inset-0 flex items-center justify-center text-[30vh] font-semibold text-white drop-shadow-lg"
       >
         {{ countdown }}
+      </div>
+
+      <div
+        v-if="isRecording"
+        class="absolute top-4 right-4 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1 text-lg font-semibold text-white"
+      >
+        <span class="size-3 rounded-full bg-red-500" />
+        {{ copy.recording }}
       </div>
 
       <div

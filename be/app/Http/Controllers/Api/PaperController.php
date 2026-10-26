@@ -18,6 +18,7 @@ class PaperController extends Controller
 {
     /**
      * Store a kiosk session: its rendered paper, its photos and the short code printed on it.
+     * Each photo may come with a behind-the-scenes clip, sent under the photo's index.
      *
      * Kiosks retry uploads until they succeed, so a session that is already stored is
      * acknowledged without storing it again. A replacement code is reserved for each
@@ -35,17 +36,19 @@ class PaperController extends Controller
         $disk = Storage::disk($diskName);
 
         $paperPath = $request->file('paper')->store('papers', $diskName);
-        $photoPaths = collect($request->file('photos'))
-            ->map(fn (UploadedFile $photo): string => $photo->store('photos', $diskName))
+        $photos = collect($request->file('photos'))
+            ->map(fn (UploadedFile $photo, int $index): array => [
+                'file_path' => $photo->store('photos', $diskName),
+                'clip_path' => $request->file("clips.{$index}")?->store('clips', $diskName),
+            ])
             ->all();
+        $storedPaths = collect($photos)->flatten()->filter()->push($paperPath)->all();
 
         try {
-            $replacementCode = DB::transaction(function () use ($request, $ref, $paperPath, $photoPaths): ?string {
+            $replacementCode = DB::transaction(function () use ($request, $ref, $paperPath, $photos): ?string {
                 $paper = Paper::query()->create(['file_path' => $paperPath, 'ref' => $ref]);
 
-                $paper->photos()->createMany(
-                    collect($photoPaths)->map(fn (string $path): array => ['file_path' => $path])->all(),
-                );
+                $paper->photos()->createMany($photos);
 
                 if (! $request->filled('code')) {
                     return null;
@@ -63,11 +66,11 @@ class PaperController extends Controller
                 return ShortCode::reserve(1)->sole()->code;
             });
         } catch (UniqueConstraintViolationException) {
-            $disk->delete([$paperPath, ...$photoPaths]);
+            $disk->delete($storedPaths);
 
             return $this->stored($ref, replacementCode: null, status: 200);
         } catch (Throwable $exception) {
-            $disk->delete([$paperPath, ...$photoPaths]);
+            $disk->delete($storedPaths);
 
             throw $exception;
         }

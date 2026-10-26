@@ -64,6 +64,11 @@ export const useUploadsStore = defineStore('uploads', () => {
     pending.photos.forEach((photo, index) =>
       form.append('photos[]', photo, `photo-${index + 1}.jpg`),
     )
+    pending.clips?.forEach((clip, index) => {
+      if (clip) {
+        form.append(`clips[${index}]`, clip, `clip-${index + 1}.mp4`)
+      }
+    })
 
     if (pending.code) {
       form.append('code', pending.code)
