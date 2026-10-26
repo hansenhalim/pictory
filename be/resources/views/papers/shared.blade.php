@@ -5,6 +5,7 @@
      *
      * @var string $code
      * @var string|null $paperUrl
+     * @var string|null $clipUrl
      * @var list<string> $photoUrls
      */
 @endphp
@@ -25,7 +26,7 @@
             <p class="text-center text-lg font-semibold tracking-wide">pictory.photo</p>
 
             @if ($paperUrl)
-                <x-soft-copy :download-name="'pictory-'.$code" :paper-url="$paperUrl" :photo-urls="$photoUrls" />
+                <x-soft-copy :download-name="'pictory-'.$code" :paper-url="$paperUrl" :clip-url="$clipUrl" :photo-urls="$photoUrls" />
             @else
                 <section class="space-y-2 py-16 text-center">
                     <p class="text-lg">Foto kamu sedang dikirim…</p>

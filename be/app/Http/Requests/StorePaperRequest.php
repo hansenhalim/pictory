@@ -19,6 +19,8 @@ class StorePaperRequest extends FormRequest
     {
         return [
             'ref' => ['required', 'uuid'],
+            // Not checked against the frames table: a session can sit offline in a kiosk while its frame is deleted.
+            'frame_id' => ['nullable', 'integer'],
             'code' => ['nullable', 'string', 'size:'.ShortCode::LENGTH],
             'paper' => ['required', 'image', 'mimes:png', 'max:20480'],
             'photos' => ['required', 'array', 'min:1', 'max:'.Frame::MAX_SLOTS],

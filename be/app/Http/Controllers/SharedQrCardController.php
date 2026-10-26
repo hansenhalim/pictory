@@ -32,6 +32,7 @@ class SharedQrCardController extends Controller
                     'takenAt' => $paper->created_at,
                     'downloadName' => "pictory-{$card->label}-".($card->papers->count() - $index),
                     'paperUrl' => $disk->temporaryUrl($paper->file_path, $expiresAt),
+                    'clipUrl' => $paper->clip_path ? $disk->temporaryUrl($paper->clip_path, $expiresAt) : null,
                     'photoUrls' => $paper->photos
                         ->map(fn (Photo $photo): string => $disk->temporaryUrl($photo->file_path, $expiresAt))
                         ->all(),

@@ -2,6 +2,8 @@
     /** The paper's file name when downloaded, without extension; photos get a counter appended. */
     'downloadName',
     'paperUrl',
+    /** The clip paper, once the queue has rendered it. */
+    'clipUrl' => null,
     'photoUrls' => [],
 ])
 
@@ -15,6 +17,20 @@
         Unduh hasil cetak
     </a>
 </section>
+
+@if ($clipUrl)
+    <section class="space-y-3">
+        <h2 class="font-semibold">Video</h2>
+        <video src="{{ $clipUrl }}" autoplay muted loop playsinline class="w-full rounded"></video>
+        <a
+            href="{{ $clipUrl }}"
+            download="{{ $downloadName }}.mp4"
+            class="block rounded bg-white py-3 text-center font-semibold text-neutral-950"
+        >
+            Unduh video
+        </a>
+    </section>
+@endif
 
 @if ($photoUrls)
     <section class="space-y-3">

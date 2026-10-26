@@ -25,6 +25,7 @@ class SharedPaperController extends Controller
         return view('papers.shared', [
             'code' => $shortCode->code,
             'paperUrl' => $shortCode->paper ? $disk->temporaryUrl($shortCode->paper->file_path, $expiresAt) : null,
+            'clipUrl' => $shortCode->paper?->clip_path ? $disk->temporaryUrl($shortCode->paper->clip_path, $expiresAt) : null,
             'photoUrls' => $shortCode->paper?->photos
                 ->map(fn (Photo $photo): string => $disk->temporaryUrl($photo->file_path, $expiresAt))
                 ->all() ?? [],

@@ -32,7 +32,7 @@ class PaperInfolist
                         ->placeholder('No photos from this session.'),
                     ViewEntry::make('clips')
                         ->label('Clips')
-                        ->view('filament.papers.clips')
+                        ->view('filament.papers.videos')
                         ->state(fn (Paper $record): array => $record->photos
                             ->pluck('clip_path')
                             ->filter()
@@ -41,11 +41,19 @@ class PaperInfolist
                             ->all())
                         ->placeholder('No clips from this session.'),
                 ])->columnSpan(['lg' => 3]),
-                ImageEntry::make('file_path')
-                    ->label('Paper')
-                    ->imageWidth('100%')
-                    ->imageHeight('auto')
-                    ->columnSpan(['lg' => 2]),
+                Group::make([
+                    ImageEntry::make('file_path')
+                        ->label('Paper')
+                        ->imageWidth('100%')
+                        ->imageHeight('auto'),
+                    ViewEntry::make('clip_path')
+                        ->label('Clip paper')
+                        ->view('filament.papers.videos')
+                        ->state(fn (Paper $record): array => $record->clip_path
+                            ? [Storage::disk(config('filament.default_filesystem_disk'))->temporaryUrl($record->clip_path, now()->addHour())]
+                            : [])
+                        ->placeholder('No clip paper for this session.'),
+                ])->columnSpan(['lg' => 2]),
             ]);
     }
 }
