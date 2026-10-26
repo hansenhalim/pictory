@@ -105,7 +105,7 @@ const overlayStyle = computed(() => {
  * Each slot counts down this much longer than the one before, so the clips recorded during
  * the countdown differ in length, which post-processing uses for transitions.
  */
-const COUNTDOWN_STEP_MS = 100
+const COUNTDOWN_STEP_MS = 250
 
 function wait(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds))
