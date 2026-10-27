@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { renderPaper } from '@/lib/render'
+import { type RenderedPaper, renderPaper } from '@/lib/render'
 import { useAssignmentsStore } from '@/stores/assignments'
 import { useFramesStore } from '@/stores/frames'
 import { usePrintsStore } from '@/stores/prints'
@@ -30,6 +30,13 @@ export const useSessionStore = defineStore('session', () => {
   /** The QR card the operator assigned this session to. */
   const card = ref<string | null>(null)
 
+  /** A paper rendered ahead of `finish`, with the photos and short code it was rendered with. */
+  let prerendered: {
+    photos: Blob[]
+    code: string | null
+    paper: Promise<RenderedPaper>
+  } | null = null
+
   const isComplete = computed(
     () => frame.value !== null && photos.value.length >= frame.value.slots.length,
   )
@@ -43,11 +50,57 @@ export const useSessionStore = defineStore('session', () => {
     printCopy.value = null
     code.value = null
     card.value = null
+    prerendered = null
   }
 
   function addPhoto(photo: Blob, clip: Blob | null) {
     photos.value = [...photos.value, photo]
     clips.value = [...clips.value, clip]
+  }
+
+  function render(withPhotos: Blob[], withCode: string | null): Promise<RenderedPaper> {
+    const currentFrame = frame.value
+    const frameImage = currentFrame ? framesStore.image(currentFrame.id) : undefined
+
+    if (!currentFrame || !frameImage) {
+      return Promise.reject(new Error('There is no frame to render.'))
+    }
+
+    return renderPaper({
+      frame: currentFrame,
+      frameImage: frameImage.blob,
+      photos: withPhotos,
+      shareUrl: withCode ? shareUrl(withCode) : null,
+    })
+  }
+
+  /**
+   * Start rendering the paper with this last photo while the customer decides whether to keep
+   * it, so finishing does not wait for it. It uses the short code `finish` would take next
+   * without taking it, and a retake simply renders again.
+   */
+  function prerender(lastPhoto: Blob) {
+    const withPhotos = [...photos.value, lastPhoto]
+    const withCode = code.value ?? shortCodesStore.peek()
+    const paper = render(withPhotos, withCode)
+
+    // A failed prerender is not reported here; finish renders again instead.
+    paper.catch(() => {})
+    prerendered = { photos: withPhotos, code: withCode, paper }
+  }
+
+  /** The prerendered paper if it was rendered with these photos and code, used up either way. */
+  function takePrerendered(): Promise<RenderedPaper> | null {
+    const candidate = prerendered
+    prerendered = null
+
+    const matches =
+      candidate !== null &&
+      candidate.code === code.value &&
+      candidate.photos.length === photos.value.length &&
+      candidate.photos.every((photo, index) => photo === photos.value[index])
+
+    return matches ? candidate.paper : null
   }
 
   /**
@@ -56,20 +109,14 @@ export const useSessionStore = defineStore('session', () => {
    */
   async function finish() {
     const currentFrame = frame.value
-    const frameImage = currentFrame ? framesStore.image(currentFrame.id) : undefined
 
-    if (!sessionRef.value || !currentFrame || !frameImage) {
+    if (!sessionRef.value || !currentFrame) {
       throw new Error('There is no session to finish.')
     }
 
     code.value ??= shortCodesStore.take()
 
-    const paper = await renderPaper({
-      frame: currentFrame,
-      frameImage: frameImage.blob,
-      photos: photos.value,
-      shareUrl: code.value ? shareUrl(code.value) : null,
-    })
+    const paper = await (takePrerendered() ?? render(photos.value, code.value))
 
     softCopy.value = paper.softCopy
     printCopy.value = paper.printCopy
@@ -116,6 +163,7 @@ export const useSessionStore = defineStore('session', () => {
     printCopy.value = null
     code.value = null
     card.value = null
+    prerendered = null
   }
 
   return {
@@ -128,6 +176,7 @@ export const useSessionStore = defineStore('session', () => {
     isComplete,
     begin,
     addPhoto,
+    prerender,
     finish,
     assignCard,
     reset,

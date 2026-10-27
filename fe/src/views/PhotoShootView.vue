@@ -155,6 +155,10 @@ async function start() {
     // Saving appears with the photo, so the photo waits for the clip saved along with it.
     capturedClip.value = await clip
     captured.value = photo
+
+    if (isLastSlot.value) {
+      sessionStore.prerender(photo)
+    }
   } catch (error) {
     console.error(error)
     hasCaptureFailed.value = true

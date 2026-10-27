@@ -42,9 +42,14 @@ export const useShortCodesStore = defineStore('shortCodes', () => {
     return code ?? null
   }
 
+  /** The code `take` would return next, left in the pool. */
+  function peek(): string | null {
+    return pool.value[0] ?? null
+  }
+
   function add(code: string) {
     pool.value = [...pool.value, code]
   }
 
-  return { pool, topUp, take, add }
+  return { pool, topUp, take, peek, add }
 })
