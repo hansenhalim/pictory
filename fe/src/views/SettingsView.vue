@@ -164,7 +164,7 @@ async function testDslr() {
   isTestingDslr.value = true
   dslrStatus.value = null
 
-  const camera = new DslrCamera({ mirror: false })
+  const camera = new DslrCamera()
 
   try {
     await camera.start()
@@ -258,7 +258,6 @@ onMounted(() => {
           <template v-else-if="framesStore.syncError"
             >Using cached frames. {{ framesStore.syncError }}</template
           >
-          <template v-else>Tap frames to offer them, in the order you want them shown.</template>
         </p>
       </div>
 
@@ -364,15 +363,10 @@ onMounted(() => {
         <span>Mirror the preview</span>
       </label>
 
-      <label class="flex items-center gap-3">
-        <input v-model="settingsStore.settings.mirrorResult" type="checkbox" class="size-5" />
-        <span>Mirror the photos and clips</span>
-      </label>
-
       <div class="space-y-1">
         <label class="flex items-center gap-3">
           <input v-model="settingsStore.settings.recordClips" type="checkbox" class="size-5" />
-          <span>Record a behind-the-scenes clip of each countdown</span>
+          <span>Behind the scenes</span>
         </label>
         <p
           v-if="settingsStore.settings.recordClips && !isClipRecordingSupported"

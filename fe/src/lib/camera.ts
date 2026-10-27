@@ -5,7 +5,7 @@ import { canvasToBlob } from '@/lib/render'
 export interface Camera {
   /** Start the camera and return the live stream to preview. */
   start(): Promise<MediaStream>
-  /** Take a photo as a JPEG, mirrored when the result is set to be. */
+  /** Take a photo as a JPEG. */
   capture(): Promise<Blob>
   stop(): void
 }
@@ -16,20 +16,9 @@ export interface Camera {
  */
 const MAX_DSLR_PHOTO_SIZE = 4096
 
-/** Encode a photo as JPEG, flipped horizontally when `mirror` is set. */
-function encodePhoto(
-  image: CanvasImageSource,
-  width: number,
-  height: number,
-  mirror: boolean,
-): Promise<Blob> {
+function encodePhoto(image: CanvasImageSource, width: number, height: number): Promise<Blob> {
   const canvas = Object.assign(document.createElement('canvas'), { width, height })
   const context = canvas.getContext('2d')!
-
-  if (mirror) {
-    context.translate(width, 0)
-    context.scale(-1, 1)
-  }
 
   context.imageSmoothingQuality = 'high'
   context.drawImage(image, 0, 0, width, height)
@@ -44,7 +33,6 @@ function wait(milliseconds: number) {
 export interface WebcamOptions {
   /** An id from `listCameras()`, or empty for the default camera. */
   deviceId: string
-  mirror: boolean
 }
 
 export class WebcamCamera implements Camera {
@@ -74,7 +62,7 @@ export class WebcamCamera implements Camera {
   async capture(): Promise<Blob> {
     const { videoWidth: width, videoHeight: height } = this.video
 
-    return encodePhoto(this.video, width, height, this.options.mirror)
+    return encodePhoto(this.video, width, height)
   }
 
   stop() {
@@ -104,10 +92,6 @@ export async function listCameras(): Promise<MediaDeviceInfo[]> {
   const devices = await navigator.mediaDevices.enumerateDevices()
 
   return devices.filter((device) => device.kind === 'videoinput')
-}
-
-export interface DslrOptions {
-  mirror: boolean
 }
 
 /** The USB interface class and subclass of cameras speaking PTP, as web-gphoto2 asks for. */
@@ -232,8 +216,6 @@ export class DslrCamera implements Camera {
   private isStarted = false
   private isStopped = false
 
-  constructor(private readonly options: DslrOptions) {}
-
   async start(): Promise<MediaStream> {
     this.isStarted = true
 
@@ -260,7 +242,6 @@ export class DslrCamera implements Camera {
         image,
         Math.round(image.width * scale),
         Math.round(image.height * scale),
-        this.options.mirror,
       )
     } finally {
       image.close()

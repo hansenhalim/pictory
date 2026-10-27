@@ -17,8 +17,8 @@ const { settings } = useSettingsStore()
 
 const camera: Camera =
   settings.cameraSource === 'dslr'
-    ? new DslrCamera({ mirror: settings.mirrorResult })
-    : new WebcamCamera({ deviceId: settings.cameraDeviceId, mirror: settings.mirrorResult })
+    ? new DslrCamera()
+    : new WebcamCamera({ deviceId: settings.cameraDeviceId })
 const video = useTemplateRef('video')
 
 /** Shooting waits for the camera, so the first photo and clip are not taken from an empty stream. */
@@ -115,10 +115,7 @@ async function start() {
   isCountingDown.value = true
   hasCaptureFailed.value = false
 
-  recorder =
-    settings.recordClips && stream
-      ? await ClipRecorder.start(stream, { mirror: settings.mirrorResult })
-      : null
+  recorder = settings.recordClips && stream ? await ClipRecorder.start(stream) : null
 
   if (recorder) {
     isRecording.value = true
@@ -222,32 +219,34 @@ onBeforeUnmount(() => {
 <template>
   <main class="flex h-full flex-col items-center justify-center gap-[4vh] px-8 py-6">
     <div class="relative overflow-hidden rounded bg-black" :style="viewportStyle">
-      <div class="absolute" :style="photoStyle">
-        <video
-          ref="video"
-          autoplay
-          muted
-          playsinline
-          class="absolute inset-0 size-full object-cover"
-          :class="{ '-scale-x-100': settings.mirrorPreview }"
-        />
+      <!-- Mirrored frame and all, the captured photo too, so it does not jump when taken. -->
+      <div class="absolute inset-0" :class="{ '-scale-x-100': settings.mirrorPreview }">
+        <div class="absolute" :style="photoStyle">
+          <video
+            ref="video"
+            autoplay
+            muted
+            playsinline
+            class="absolute inset-0 size-full object-cover"
+          />
+
+          <img
+            v-if="capturedUrl"
+            :src="capturedUrl"
+            alt=""
+            class="absolute inset-0 size-full object-cover"
+          />
+        </div>
 
         <img
-          v-if="capturedUrl"
-          :src="capturedUrl"
+          v-if="frameImage"
+          :src="frameImage.url"
           alt=""
-          class="absolute inset-0 size-full object-cover"
+          class="pointer-events-none absolute max-w-none"
+          :style="overlayStyle"
+          draggable="false"
         />
       </div>
-
-      <img
-        v-if="frameImage"
-        :src="frameImage.url"
-        alt=""
-        class="pointer-events-none absolute max-w-none"
-        :style="overlayStyle"
-        draggable="false"
-      />
 
       <div
         v-if="isCountingDown && countdown > 0"

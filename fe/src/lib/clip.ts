@@ -12,11 +12,6 @@ export function canRecordClips(): boolean {
   return 'MediaRecorder' in window && MediaRecorder.isTypeSupported(CLIP_TYPE)
 }
 
-export interface ClipOptions {
-  /** Flip the clip horizontally, to match photos taken with the result mirrored. */
-  mirror: boolean
-}
-
 /** Video to record, and how to let go of it once recorded. */
 interface ClipSource {
   stream: MediaStream
@@ -55,7 +50,7 @@ export class ClipRecorder {
   }
 
   /** Start recording the stream's video, or return null when that is not possible. */
-  static async start(stream: MediaStream, options: ClipOptions): Promise<ClipRecorder | null> {
+  static async start(stream: MediaStream): Promise<ClipRecorder | null> {
     const track = stream.getVideoTracks()[0]
 
     if (!track || !canRecordClips()) {
@@ -65,7 +60,7 @@ export class ClipRecorder {
     let source: ClipSource | null = null
 
     try {
-      source = await openClipSource(track, options)
+      source = await openClipSource(track)
 
       const recorder = new MediaRecorder(source.stream, {
         mimeType: CLIP_TYPE,
@@ -94,16 +89,12 @@ export class ClipRecorder {
 }
 
 /**
- * The track's video, fitted to the clip box and mirrored when asked. MediaRecorder encodes a
- * camera's frames at their full size even on a track scaled down with `applyConstraints`, so
- * video that is larger, or has to be flipped, is drawn onto a canvas of the clip's size instead.
- * A DSLR's live view is already smaller than the box.
+ * The track's video, fitted to the clip box. MediaRecorder encodes a camera's frames at their
+ * full size even on a track scaled down with `applyConstraints`, so larger video is drawn onto
+ * a canvas of the clip's size instead. A DSLR's live view is already smaller than the box.
  */
-async function openClipSource(
-  track: MediaStreamTrack,
-  { mirror }: ClipOptions,
-): Promise<ClipSource> {
-  if (!mirror && fitScale(track.getSettings()) === 1) {
+async function openClipSource(track: MediaStreamTrack): Promise<ClipSource> {
+  if (fitScale(track.getSettings()) === 1) {
     const copy = track.clone()
 
     return { stream: new MediaStream([copy]), close: () => copy.stop() }
@@ -121,11 +112,6 @@ async function openClipSource(
   })
   const context = canvas.getContext('2d')!
   const stream = canvas.captureStream()
-
-  if (mirror) {
-    context.translate(canvas.width, 0)
-    context.scale(-1, 1)
-  }
 
   let isClosed = false
 
