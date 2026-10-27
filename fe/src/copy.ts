@@ -14,6 +14,7 @@ export const copy = {
   print: 'Cetak',
   printing: 'Mencetak…',
   printFailed: 'Gagal mencetak. Coba lagi.',
+  sheetsLeft: 'lembar tersisa',
   scanForSoftCopy: 'Scan QR untuk mengambil softcopy',
   softCopyUnavailable: 'Softcopy tidak tersedia',
   restart: 'Mulai lagi',

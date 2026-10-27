@@ -6,7 +6,12 @@ export interface AgentHealth {
   printer: string
   ok: boolean
   status: string
+  /** As the printer last reported it to CUPS, which is only after a job; null when unknown. */
+  sheets_left: number | null
 }
+
+/** Below this many sheets the operator is warned to have a new roll ready. */
+export const LOW_SHEETS = 30
 
 function endpoint(agentUrl: string, path: string): string {
   return agentUrl.replace(/\/+$/, '') + path

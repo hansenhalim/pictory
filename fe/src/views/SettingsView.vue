@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIntervalFn, useNow, useOnline } from '@vueuse/core'
-import { checkAgent } from '@/lib/agent'
+import { checkAgent, LOW_SHEETS } from '@/lib/agent'
 import PrintThumbnail from '@/components/PrintThumbnail.vue'
 import ReprintDialog from '@/components/ReprintDialog.vue'
 import { chooseDslr, DslrCamera, listCameras, listDslrs } from '@/lib/camera'
@@ -31,7 +31,9 @@ const cameraError = ref<string | null>(null)
 const dslrs = ref<string[]>([])
 const dslrStatus = ref<{ isReady: boolean; message: string } | null>(null)
 const isTestingDslr = ref(false)
-const printerStatus = ref<{ isReady: boolean; message: string } | null>(null)
+const printerStatus = ref<{ isReady: boolean; message: string; sheetsLeft: number | null } | null>(
+  null,
+)
 const isTestingPrinter = ref(false)
 const isRetryingUploads = ref(false)
 const selectedPrint = ref<PrintRecord | null>(null)
@@ -190,11 +192,13 @@ async function testPrinter() {
       message: health.ok
         ? `${health.printer} is ready.`
         : `${health.printer} is not ready. ${health.status}`,
+      sheetsLeft: health.sheets_left,
     }
   } catch (error) {
     printerStatus.value = {
       isReady: false,
       message: `Could not reach the print agent. ${errorMessage(error)}`,
+      sheetsLeft: null,
     }
   } finally {
     isTestingPrinter.value = false
@@ -214,6 +218,7 @@ onMounted(() => {
   void framesStore.sync().catch(() => {})
   void loadCameras()
   void loadDslrs()
+  void testPrinter()
 })
 </script>
 
@@ -432,13 +437,21 @@ onMounted(() => {
         </div>
       </label>
 
-      <p
-        v-if="printerStatus"
-        class="text-sm"
-        :class="printerStatus.isReady ? 'text-green-400' : 'text-red-400'"
-      >
-        {{ printerStatus.message }}
-      </p>
+      <template v-if="printerStatus">
+        <p class="text-sm" :class="printerStatus.isReady ? 'text-green-400' : 'text-red-400'">
+          {{ printerStatus.message }}
+        </p>
+        <p
+          class="text-sm tabular-nums"
+          :class="
+            printerStatus.sheetsLeft !== null && printerStatus.sheetsLeft < LOW_SHEETS
+              ? 'text-amber-400'
+              : 'text-neutral-400'
+          "
+        >
+          Sheets left: {{ printerStatus.sheetsLeft ?? 'unknown' }}
+        </p>
+      </template>
     </section>
 
     <section class="grid grid-cols-3 gap-4 rounded-lg bg-neutral-900 p-6 text-center">

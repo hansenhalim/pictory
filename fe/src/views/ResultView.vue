@@ -8,6 +8,7 @@ import KioskButton from '@/components/KioskButton.vue'
 import PrintCopiesStepper from '@/components/PrintCopiesStepper.vue'
 import { usePrinter } from '@/composables/usePrinter'
 import { copy } from '@/copy'
+import { LOW_SHEETS } from '@/lib/agent'
 import { nextCardLabel, parseCardLabel } from '@/lib/cards'
 import { useAssignmentsStore } from '@/stores/assignments'
 import { useSessionStore } from '@/stores/session'
@@ -18,7 +19,13 @@ const router = useRouter()
 const sessionStore = useSessionStore()
 const assignmentsStore = useAssignmentsStore()
 const { settings } = useSettingsStore()
-const { isPrinting, failure: printFailure, print: sendToPrinter } = usePrinter()
+const {
+  isPrinting,
+  failure: printFailure,
+  sheetsLeft,
+  refreshSheetsLeft,
+  print: sendToPrinter,
+} = usePrinter()
 
 const paperUrl = useObjectUrl(computed(() => sessionStore.printCopy))
 const qrCodeUrl = ref<string | null>(null)
@@ -64,6 +71,8 @@ async function restart() {
 }
 
 onMounted(async () => {
+  void refreshSheetsLeft()
+
   if (sessionStore.code) {
     qrCodeUrl.value = await QRCode.toDataURL(shareUrl(sessionStore.code), {
       errorCorrectionLevel: 'Q',
@@ -91,6 +100,20 @@ onMounted(async () => {
         :label="copy.prints"
         :cut="sessionStore.frame?.cut ?? false"
       />
+
+      <p
+        v-if="sheetsLeft !== null"
+        class="-mt-4 tabular-nums"
+        :class="
+          sheets > sheetsLeft
+            ? 'text-red-400'
+            : sheetsLeft < LOW_SHEETS
+              ? 'text-amber-400'
+              : 'text-neutral-500'
+        "
+      >
+        {{ sheetsLeft }} {{ copy.sheetsLeft }}
+      </p>
 
       <div class="w-full space-y-2">
         <KioskButton class="w-full" :disabled="isPrinting" @click="print">
