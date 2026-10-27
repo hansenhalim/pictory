@@ -6,7 +6,7 @@
 //
 // Endpoints:
 //
-//	GET  /health  reports whether the printer is known to CUPS
+//	GET  /health  reports whether the printer is known to CUPS, and how many sheets it has left
 //	POST /print   multipart: paper (PNG), copies (1-20), cut (bool)
 //
 // It listens on loopback only. Any origin may print by default; pass -origins to accept
@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -131,10 +132,36 @@ func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	output, err := s.run(r.Context(), "lpstat", "-p", s.printer)
 
 	writeJSON(w, http.StatusOK, map[string]any{
-		"printer": s.printer,
-		"ok":      err == nil,
-		"status":  strings.TrimSpace(string(output)),
+		"printer":     s.printer,
+		"ok":          err == nil,
+		"status":      strings.TrimSpace(string(output)),
+		"sheets_left": s.sheetsLeft(r.Context()),
 	})
+}
+
+var markerLevels = regexp.MustCompile(`(?:^|\s)marker-levels=(-?\d+)`)
+
+// sheetsLeft reads the media count the printer's backend last reported to CUPS as its
+// marker level. CUPS only refreshes it when a job runs, so it lags until the next print.
+// It is nil when unknown: no level was reported, or a negative one, which IPP uses for
+// "unknown" and "not empty".
+func (s *server) sheetsLeft(ctx context.Context) *int {
+	output, err := s.run(ctx, "lpoptions", "-p", s.printer)
+	if err != nil {
+		return nil
+	}
+
+	match := markerLevels.FindSubmatch(output)
+	if match == nil {
+		return nil
+	}
+
+	level, err := strconv.Atoi(string(match[1]))
+	if err != nil || level < 0 {
+		return nil
+	}
+
+	return &level
 }
 
 func (s *server) print(w http.ResponseWriter, r *http.Request) {
