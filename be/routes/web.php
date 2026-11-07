@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PaperCardController;
 use App\Http\Controllers\Api\PaperController;
 use App\Http\Controllers\Api\ShortCodeController;
 use App\Http\Controllers\QrDeckPrintController;
+use App\Http\Controllers\SharedMomentController;
 use App\Http\Controllers\SharedPaperController;
 use App\Http\Controllers\SharedQrCardController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,12 @@ Route::get('/p/{code}', [SharedPaperController::class, 'show'])->whereAlphaNumer
 Route::get('/P/{code}', [SharedPaperController::class, 'show'])->whereAlphaNumeric('code');
 Route::get('/c/{uuid}', [SharedQrCardController::class, 'show'])->whereUuid('uuid')->name('qr-cards.shared');
 Route::get('/C/{uuid}', [SharedQrCardController::class, 'show'])->whereUuid('uuid');
+
+Route::prefix('/m/{slug}')->where(['slug' => '[A-Za-z0-9-]+'])->name('moments.')->group(function () {
+    Route::get('/', [SharedMomentController::class, 'show'])->name('shared');
+    Route::get('/cover.jpg', [SharedMomentController::class, 'cover'])->name('cover');
+    Route::get('/{paperId}', [SharedMomentController::class, 'showPaper'])->whereNumber('paperId')->name('papers.shared');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/admin/qr-cards/print/{deck}', [QrDeckPrintController::class, 'show'])->whereNumber('deck')->name('qr-cards.print');

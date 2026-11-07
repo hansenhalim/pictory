@@ -40,6 +40,16 @@ class Paper extends Model
     }
 
     /**
+     * Get the moment the admin added this paper to, if any.
+     *
+     * @return BelongsTo<Moment, $this>
+     */
+    public function moment(): BelongsTo
+    {
+        return $this->belongsTo(Moment::class);
+    }
+
+    /**
      * Get the short code printed on this paper, if it had one.
      *
      * @return HasOne<ShortCode, $this>
@@ -47,6 +57,14 @@ class Paper extends Model
     public function shortCode(): HasOne
     {
         return $this->hasOne(ShortCode::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::deleted(function (self $paper): void {
+            // The database has already let go of the paper; the moment may need a new cover.
+            $paper->moment?->syncCover();
+        });
     }
 
     /**

@@ -16,10 +16,19 @@ return new class extends Migration
             $table->uuid('ref')->unique();
             $table->foreignId('frame_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('qr_card_id')->nullable()->constrained();
+            $table->foreignId('moment_id')->nullable()->constrained()->nullOnDelete();
             $table->string('file_path');
             $table->string('clip_path')->nullable();
             $table->json('photos');
             $table->timestamps();
+        });
+
+        /*
+         * A moment's cover is one of its papers, and papers belong to moments, so the cover's
+         * constraint can only be added once both tables exist.
+         */
+        Schema::table('moments', function (Blueprint $table) {
+            $table->foreign('cover_paper_id')->references('id')->on('papers')->nullOnDelete();
         });
     }
 
@@ -28,6 +37,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('moments', function (Blueprint $table) {
+            $table->dropForeign(['cover_paper_id']);
+        });
+
         Schema::dropIfExists('papers');
     }
 };

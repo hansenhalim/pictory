@@ -6,6 +6,7 @@ use Database\Factories\FrameFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property list<list<array{x: int, y: int, width: int, height: int}>> $slots One entry per photo, each listing every placement of that photo on the paper.
@@ -32,6 +33,16 @@ class Frame extends Model
     public static function slotHeight(int $width): int
     {
         return (int) round($width * 2 / 3);
+    }
+
+    /**
+     * Get the papers of the sessions shot with this frame.
+     *
+     * @return HasMany<Paper, $this>
+     */
+    public function papers(): HasMany
+    {
+        return $this->hasMany(Paper::class);
     }
 
     /**
