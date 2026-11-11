@@ -8,12 +8,15 @@
 <dialog
     data-feedback-sheet
     aria-labelledby="feedback-title"
-    class="mx-auto mt-auto mb-0 w-full max-w-md rounded-t-2xl bg-neutral-900 p-6 text-neutral-100 backdrop:bg-black/60"
+    aria-describedby="feedback-subtitle"
+    class="mx-auto mt-auto mb-0 w-full max-w-md rounded-t-2xl bg-neutral-900 px-6 pt-8 pb-6 text-neutral-100 backdrop:bg-black/60"
 >
+    <button type="button" data-feedback-dismiss aria-label="Tutup" class="absolute top-3 right-3 p-2 leading-none text-neutral-400">✕</button>
+
     <form data-feedback-form class="space-y-5">
-        <div class="flex items-start justify-between gap-4">
-            <h2 id="feedback-title" class="text-lg font-semibold">Gimana pengalaman photobooth-nya?</h2>
-            <button type="button" data-feedback-dismiss aria-label="Tutup" class="-m-2 p-2 text-neutral-400">✕</button>
+        <div class="space-y-1 text-center">
+            <h2 id="feedback-title" class="text-lg font-semibold">Softcopy berhasil diunduh 🎉</h2>
+            <p id="feedback-subtitle" class="text-sm text-neutral-400">Gimana pengalaman photobooth kamu di acara ini?</p>
         </div>
 
         <div role="radiogroup" aria-label="Nilai" class="flex justify-center gap-2">
@@ -24,8 +27,12 @@
                     aria-checked="false"
                     aria-label="{{ $star }} bintang"
                     data-feedback-star="{{ $star }}"
-                    class="px-1 text-4xl leading-none text-neutral-700 data-active:text-amber-400"
-                >★</button>
+                    class="p-1 text-neutral-700 transition-transform active:scale-90 data-active:text-amber-400"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true" class="size-10 fill-current stroke-current" stroke-width="3" stroke-linejoin="round">
+                        <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
+                    </svg>
+                </button>
             @endforeach
         </div>
 
@@ -44,8 +51,6 @@
         </div>
 
         <p data-feedback-error hidden role="alert" class="text-center text-sm text-red-400">Gagal mengirim, coba lagi ya.</p>
-
-        <button type="button" data-feedback-dismiss class="block w-full py-1 text-center text-sm text-neutral-400">Nanti aja</button>
     </form>
 
     <p data-feedback-done hidden role="status" class="py-6 text-center text-lg"></p>
