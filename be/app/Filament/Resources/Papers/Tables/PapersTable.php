@@ -34,6 +34,21 @@ class PapersTable
                 TextColumn::make('photos')
                     ->label('Photos')
                     ->state(fn (Paper $record): int => count($record->photos)),
+                TextColumn::make('rating')
+                    ->formatStateUsing(fn (int $state): string => str_repeat('★', $state).str_repeat('☆', 5 - $state))
+                    ->placeholder('—')
+                    ->sortable(),
+                TextColumn::make('feedback_comment')
+                    ->label('Comment')
+                    ->limit(60)
+                    ->tooltip(fn (Paper $record): ?string => $record->feedback_comment)
+                    ->wrap()
+                    ->placeholder('—'),
+                TextColumn::make('rated_at')
+                    ->dateTime()
+                    ->placeholder('—')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
@@ -54,6 +69,11 @@ class PapersTable
                         ->pluck('id')
                         ->mapWithKeys(fn (int $id): array => [$id => "Frame {$id}"])
                         ->all()),
+                SelectFilter::make('rating')
+                    ->options(collect(range(5, 1))->mapWithKeys(fn (int $stars): array => [$stars => str_repeat('★', $stars)])->all()),
+                TernaryFilter::make('feedback_comment')
+                    ->label('Has comment')
+                    ->nullable(),
                 SelectFilter::make('deck')
                     ->options(fn (): array => QrCardsTable::deckOptions())
                     ->query(fn (Builder $query, array $data): Builder => $query->when(

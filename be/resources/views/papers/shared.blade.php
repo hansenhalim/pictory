@@ -7,6 +7,8 @@
      * @var string|null $paperUrl
      * @var string|null $clipUrl
      * @var list<string> $photoUrls
+     * @var string $feedbackUrl
+     * @var bool $isRated
      */
 @endphp
 
@@ -15,18 +17,19 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>pictory.photo</title>
         @unless ($paperUrl)
             <meta http-equiv="refresh" content="5">
         @endunless
-        @vite(['resources/css/app.css'])
+        @vite(['resources/css/app.css', 'resources/js/feedback.js'])
     </head>
     <body class="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
         <main class="mx-auto max-w-md space-y-8 px-4 py-8">
             <p class="text-center text-lg font-semibold tracking-wide">pictory.photo</p>
 
             @if ($paperUrl)
-                <x-soft-copy :download-name="'pictory-'.$code" :paper-url="$paperUrl" :clip-url="$clipUrl" :photo-urls="$photoUrls" />
+                <x-soft-copy :download-name="'pictory-'.$code" :paper-url="$paperUrl" :clip-url="$clipUrl" :photo-urls="$photoUrls" :feedback-url="$feedbackUrl" :is-rated="$isRated" />
             @else
                 <section class="space-y-2 py-16 text-center">
                     <p class="text-lg">Foto kamu sedang dikirim…</p>
@@ -34,5 +37,7 @@
                 </section>
             @endif
         </main>
+
+        <x-feedback-sheet />
     </body>
 </html>
