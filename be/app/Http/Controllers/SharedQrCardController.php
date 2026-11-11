@@ -35,6 +35,8 @@ class SharedQrCardController extends Controller
                     'photoUrls' => collect($paper->photos)
                         ->map(fn (array $photo): string => $disk->temporaryUrl($photo['file_path'], $expiresAt))
                         ->all(),
+                    'feedbackUrl' => route('feedback.qr-cards', [$card->uuid, $paper->id]),
+                    'isRated' => $paper->rated_at !== null,
                 ])
                 ->all(),
         ]);

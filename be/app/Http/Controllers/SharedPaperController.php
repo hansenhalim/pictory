@@ -28,6 +28,8 @@ class SharedPaperController extends Controller
             'photoUrls' => collect($shortCode->paper?->photos)
                 ->map(fn (array $photo): string => $disk->temporaryUrl($photo['file_path'], $expiresAt))
                 ->all(),
+            'feedbackUrl' => route('feedback.papers', $shortCode->code),
+            'isRated' => $shortCode->paper?->rated_at !== null,
         ]);
     }
 }

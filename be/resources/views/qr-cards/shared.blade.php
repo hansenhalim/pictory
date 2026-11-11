@@ -3,7 +3,7 @@
      * The soft copy page a QR card opens: every session assigned to the card, newest first.
      * Until the first one arrives, it shows a waiting message and reloads itself.
      *
-     * @var list<array{takenAt: \Illuminate\Support\Carbon, downloadName: string, paperUrl: string, clipUrl: string|null, photoUrls: list<string>}> $sessions
+     * @var list<array{takenAt: \Illuminate\Support\Carbon, downloadName: string, paperUrl: string, clipUrl: string|null, photoUrls: list<string>, feedbackUrl: string, isRated: bool}> $sessions
      */
 @endphp
 
@@ -12,11 +12,12 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>pictory.photo</title>
         @unless ($sessions)
             <meta http-equiv="refresh" content="5">
         @endunless
-        @vite(['resources/css/app.css'])
+        @vite(['resources/css/app.css', 'resources/js/feedback.js'])
     </head>
     <body class="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
         <main class="mx-auto max-w-md space-y-8 px-4 py-8">
@@ -33,6 +34,8 @@
                         :paper-url="$session['paperUrl']"
                         :clip-url="$session['clipUrl']"
                         :photo-urls="$session['photoUrls']"
+                        :feedback-url="$session['feedbackUrl']"
+                        :is-rated="$session['isRated']"
                     />
                 </article>
             @empty
@@ -42,6 +45,8 @@
                 </section>
             @endforelse
         </main>
+
+        <x-feedback-sheet />
 
         <script>
             {{-- Times are stored in UTC; show them in the customer's own time zone. --}}

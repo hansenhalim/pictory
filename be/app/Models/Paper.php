@@ -8,10 +8,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string|null $clip_path The clip paper: the paper as a video, its slots playing their behind-the-scenes clips.
  * @property non-empty-list<array{file_path: string, clip_path: string|null}> $photos The photos taken in the session, one per slot in slot order, each with the behind-the-scenes clip recorded during the countdown before it, if the kiosk made one.
+ * @property int|null $rating The guest's 1 to 5 stars for the photobooth, asked after they download the soft copy.
+ * @property string|null $feedback_comment
+ * @property Carbon|null $rated_at
  */
 #[Fillable(['ref', 'frame_id', 'file_path', 'clip_path', 'photos'])]
 class Paper extends Model
@@ -79,6 +83,34 @@ class Paper extends Model
     }
 
     /**
+     * Record a guest's feedback, unless the paper has been rated already.
+     *
+     * Everyone who scans a paper's QR code is asked, but only the first answer counts, so two
+     * guests submitting at once cannot overwrite each other.
+     *
+     * @return bool Whether this feedback was recorded.
+     */
+    public function rate(int $rating, ?string $comment): bool
+    {
+        $ratedAt = now();
+
+        $recorded = self::query()
+            ->whereKey($this->getKey())
+            ->whereNull('rated_at')
+            ->update([
+                'rating' => $rating,
+                'feedback_comment' => $comment,
+                'rated_at' => $ratedAt,
+            ]) === 1;
+
+        if ($recorded) {
+            $this->forceFill(['rating' => $rating, 'feedback_comment' => $comment, 'rated_at' => $ratedAt])->syncOriginal();
+        }
+
+        return $recorded;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -87,6 +119,7 @@ class Paper extends Model
     {
         return [
             'photos' => 'array',
+            'rated_at' => 'datetime',
         ];
     }
 }
