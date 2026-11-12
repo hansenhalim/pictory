@@ -29,7 +29,7 @@ class SharedPaperController extends Controller
                 ->map(fn (array $photo): string => $disk->temporaryUrl($photo['file_path'], $expiresAt))
                 ->all(),
             'feedbackUrl' => route('feedback.papers', $shortCode->code),
-            'isRated' => $shortCode->paper?->rating !== null,
+            'isRated' => $shortCode->paper?->feedback !== null,
             'noteUrl' => route('notes.papers', $shortCode->code),
             'note' => $shortCode->paper?->note,
         ]);

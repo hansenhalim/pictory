@@ -12,15 +12,24 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /**
  * @property string|null $clip_path The clip paper: the paper as a video, its slots playing their behind-the-scenes clips.
  * @property non-empty-list<array{file_path: string, clip_path: string|null}> $photos The photos taken in the session, one per slot in slot order, each with the behind-the-scenes clip recorded during the countdown before it, if the kiosk made one.
- * @property int|null $rating The guest's 1 to 5 stars for the photobooth, asked after they download the soft copy.
- * @property string|null $feedback
- * @property string|null $note A guest's message to the moment's hosts, e.g. a wedding wish for the couple, shown with the paper on the moment's pages.
+ * @property string|null $feedback A guest's rating of the photobooth for staff, asked after they download the soft copy, as `FEEDBACK_TEMPLATE` fills it.
+ * @property string|null $note A guest's message to the moment's hosts, e.g. a wedding wish for the couple, signed as `NOTE_TEMPLATE` fills it and shown on the moment's pages.
  */
 #[Fillable(['ref', 'frame_id', 'file_path', 'clip_path', 'photos'])]
 class Paper extends Model
 {
     /** @use HasFactory<PaperFactory> */
     use HasFactory;
+
+    /**
+     * How feedback is stored: read by staff only, so the rating, comment and time share one text.
+     */
+    public const string FEEDBACK_TEMPLATE = "Rating: {rating}/5 {stars}\nComment: {comment}\nCreated at: {createdAt}";
+
+    /**
+     * How a note is stored and shown: the message, then who sent it.
+     */
+    public const string NOTE_TEMPLATE = "{note}\n\n— {sender}";
 
     /**
      * Get the frame the session was shot with, unless it was deleted since.
@@ -91,7 +100,12 @@ class Paper extends Model
      */
     public function rate(int $rating, ?string $comment): bool
     {
-        return $this->fillOnce('rating', ['rating' => $rating, 'feedback' => $comment]);
+        return $this->fillOnce('feedback', strtr(self::FEEDBACK_TEMPLATE, [
+            '{rating}' => $rating,
+            '{stars}' => str_repeat('★', $rating).str_repeat('☆', 5 - $rating),
+            '{comment}' => $comment ?? '—',
+            '{createdAt}' => now()->toIso8601String(),
+        ]));
     }
 
     /**
@@ -102,26 +116,27 @@ class Paper extends Model
      *
      * @return bool Whether this note was recorded.
      */
-    public function leaveNote(string $note): bool
+    public function leaveNote(string $note, string $sender): bool
     {
-        return $this->fillOnce('note', ['note' => $note]);
+        return $this->fillOnce('note', strtr(self::NOTE_TEMPLATE, [
+            '{note}' => $note,
+            '{sender}' => $sender,
+        ]));
     }
 
     /**
-     * Set the attributes in one query that only matches while `$column` is still empty, so of two
-     * guests submitting at once, only the first is recorded.
-     *
-     * @param  array<string, mixed>  $attributes
+     * Set the column in one query that only matches while it is still empty, so of two guests
+     * submitting at once, only the first is recorded.
      */
-    private function fillOnce(string $column, array $attributes): bool
+    private function fillOnce(string $column, string $value): bool
     {
         $isRecorded = self::query()
             ->whereKey($this->getKey())
             ->whereNull($column)
-            ->update($attributes) === 1;
+            ->update([$column => $value]) === 1;
 
         if ($isRecorded) {
-            $this->forceFill($attributes)->syncOriginal();
+            $this->forceFill([$column => $value])->syncOriginal();
         } else {
             $this->refresh();
         }

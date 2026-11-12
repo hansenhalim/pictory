@@ -26,13 +26,11 @@ class PaperInfolist
                         ->label('Card')
                         ->url(fn (Paper $record): ?string => $record->qrCard ? route('qr-cards.shared', $record->qrCard->uuid) : null, shouldOpenInNewTab: true)
                         ->placeholder('Not assigned to a card.'),
-                    TextEntry::make('rating')
-                        ->formatStateUsing(fn (int $state): string => str_repeat('★', $state).str_repeat('☆', 5 - $state))
-                        ->placeholder('Not rated.'),
                     TextEntry::make('feedback')
-                        ->label('Comment')
-                        ->placeholder('No comment.'),
+                        ->extraAttributes(['style' => 'white-space: pre-line'])
+                        ->placeholder('No feedback.'),
                     TextEntry::make('note')
+                        ->extraAttributes(['style' => 'white-space: pre-line'])
                         ->placeholder('No note.'),
                     ImageEntry::make('photos')
                         ->label('Photos')

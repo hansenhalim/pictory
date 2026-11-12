@@ -9,6 +9,8 @@ class StorePaperNoteRequest extends FormRequest
 {
     public const int NOTE_MAX_LENGTH = 500;
 
+    public const int SENDER_MAX_LENGTH = 60;
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -18,6 +20,7 @@ class StorePaperNoteRequest extends FormRequest
     {
         return [
             'note' => ['required', 'string', 'max:'.self::NOTE_MAX_LENGTH],
+            'sender' => ['required', 'string', 'max:'.self::SENDER_MAX_LENGTH],
         ];
     }
 }

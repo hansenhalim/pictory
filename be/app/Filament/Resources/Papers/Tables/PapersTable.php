@@ -34,12 +34,7 @@ class PapersTable
                 TextColumn::make('photos')
                     ->label('Photos')
                     ->state(fn (Paper $record): int => count($record->photos)),
-                TextColumn::make('rating')
-                    ->formatStateUsing(fn (int $state): string => str_repeat('★', $state).str_repeat('☆', 5 - $state))
-                    ->placeholder('—')
-                    ->sortable(),
                 TextColumn::make('feedback')
-                    ->label('Comment')
                     ->limit(60)
                     ->tooltip(fn (Paper $record): ?string => $record->feedback)
                     ->wrap()
@@ -69,10 +64,8 @@ class PapersTable
                         ->pluck('id')
                         ->mapWithKeys(fn (int $id): array => [$id => "Frame {$id}"])
                         ->all()),
-                SelectFilter::make('rating')
-                    ->options(collect(range(5, 1))->mapWithKeys(fn (int $stars): array => [$stars => str_repeat('★', $stars)])->all()),
                 TernaryFilter::make('feedback')
-                    ->label('Has comment')
+                    ->label('Has feedback')
                     ->nullable(),
                 TernaryFilter::make('note')
                     ->label('Has note')
