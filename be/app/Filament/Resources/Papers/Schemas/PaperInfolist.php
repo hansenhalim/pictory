@@ -29,7 +29,7 @@ class PaperInfolist
                     TextEntry::make('rating')
                         ->formatStateUsing(fn (int $state): string => str_repeat('★', $state).str_repeat('☆', 5 - $state))
                         ->placeholder('Not rated.'),
-                    TextEntry::make('feedback_comment')
+                    TextEntry::make('feedback')
                         ->label('Comment')
                         ->placeholder('No comment.'),
                     TextEntry::make('rated_at')

@@ -38,10 +38,10 @@ class PapersTable
                     ->formatStateUsing(fn (int $state): string => str_repeat('★', $state).str_repeat('☆', 5 - $state))
                     ->placeholder('—')
                     ->sortable(),
-                TextColumn::make('feedback_comment')
+                TextColumn::make('feedback')
                     ->label('Comment')
                     ->limit(60)
-                    ->tooltip(fn (Paper $record): ?string => $record->feedback_comment)
+                    ->tooltip(fn (Paper $record): ?string => $record->feedback)
                     ->wrap()
                     ->placeholder('—'),
                 TextColumn::make('rated_at')
@@ -71,7 +71,7 @@ class PapersTable
                         ->all()),
                 SelectFilter::make('rating')
                     ->options(collect(range(5, 1))->mapWithKeys(fn (int $stars): array => [$stars => str_repeat('★', $stars)])->all()),
-                TernaryFilter::make('feedback_comment')
+                TernaryFilter::make('feedback')
                     ->label('Has comment')
                     ->nullable(),
                 SelectFilter::make('deck')

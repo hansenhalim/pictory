@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('clip_path')->nullable();
             $table->json('photos');
             $table->unsignedTinyInteger('rating')->nullable();
-            $table->text('feedback_comment')->nullable();
+            $table->text('feedback')->nullable();
             $table->timestamp('rated_at')->nullable();
             $table->timestamps();
         });
