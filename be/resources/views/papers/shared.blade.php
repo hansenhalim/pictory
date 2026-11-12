@@ -9,6 +9,8 @@
      * @var list<string> $photoUrls
      * @var string $feedbackUrl
      * @var bool $isRated
+     * @var string $noteUrl
+     * @var string|null $note
      */
 @endphp
 
@@ -22,14 +24,14 @@
         @unless ($paperUrl)
             <meta http-equiv="refresh" content="5">
         @endunless
-        @vite(['resources/css/app.css', 'resources/js/feedback.js'])
+        @vite(['resources/css/app.css', 'resources/js/feedback.js', 'resources/js/notes.js'])
     </head>
     <body class="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
         <main class="mx-auto max-w-md space-y-8 px-4 py-8">
             <p class="text-center text-lg font-semibold tracking-wide">pictory.photo</p>
 
             @if ($paperUrl)
-                <x-soft-copy :download-name="'pictory-'.$code" :paper-url="$paperUrl" :clip-url="$clipUrl" :photo-urls="$photoUrls" :feedback-url="$feedbackUrl" :is-rated="$isRated" />
+                <x-soft-copy :download-name="'pictory-'.$code" :paper-url="$paperUrl" :clip-url="$clipUrl" :photo-urls="$photoUrls" :feedback-url="$feedbackUrl" :is-rated="$isRated" :note-url="$noteUrl" :note="$note" />
             @else
                 <section class="space-y-2 py-16 text-center">
                     <p class="text-lg">Foto kamu sedang dikirim…</p>

@@ -6,7 +6,7 @@
      * @var int $paperCount
      * @var string $description
      * @var string $coverUrl
-     * @var list<list<array{number: int, url: string, paperUrl: string}>> $pages
+     * @var list<list<array{number: int, url: string, paperUrl: string, hasNote: bool}>> $pages
      */
     $photos = $paperCount.' '.Str::plural('photo', $paperCount);
 @endphp
@@ -42,6 +42,9 @@
                     @foreach ($page as $entry)
                         <a class="moment-entry" href="{{ $entry['url'] }}">
                             <img src="{{ $entry['paperUrl'] }}" alt="Photo {{ $entry['number'] }}" loading="lazy">
+                            @if ($entry['hasNote'])
+                                <span class="moment-entry-note" role="img" aria-label="Has a message">💌</span>
+                            @endif
                             <span>{{ str_pad($entry['number'], 2, '0', STR_PAD_LEFT) }}</span>
                         </a>
                     @endforeach

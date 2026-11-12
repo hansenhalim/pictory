@@ -40,6 +40,7 @@ class SharedMomentController extends Controller
                     'number' => $index + 1,
                     'url' => route('moments.papers.shared', [$moment->slug, $paper->id]),
                     'paperUrl' => $disk->temporaryUrl($paper->file_path, $expiresAt),
+                    'hasNote' => $paper->note !== null,
                 ])
                 ->chunk(4)
                 ->map(fn ($entries) => $entries->values()->all())
@@ -48,8 +49,8 @@ class SharedMomentController extends Controller
     }
 
     /**
-     * Show one paper of a moment with its clip and photos to download, between links to the
-     * papers before and after it.
+     * Show one paper of a moment with its clip and photos to download and the note a guest left
+     * on it, between links to the papers before and after it.
      */
     public function showPaper(string $slug, int $paperId): View|RedirectResponse
     {
@@ -75,6 +76,7 @@ class SharedMomentController extends Controller
             'description' => "Photo {$this->padded($number)} of {$paperIds->count()}",
             'coverUrl' => $this->coverUrl($moment),
             'takenAt' => $paper->created_at,
+            'note' => $paper->note,
             'downloadName' => (Str::slug($moment->name) ?: 'pictory').'-'.$this->padded($number),
             'paperUrl' => $disk->temporaryUrl($paper->file_path, $expiresAt),
             'clipUrl' => $paper->clip_path ? $disk->temporaryUrl($paper->clip_path, $expiresAt) : null,

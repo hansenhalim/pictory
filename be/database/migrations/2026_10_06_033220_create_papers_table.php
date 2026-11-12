@@ -22,7 +22,7 @@ return new class extends Migration
             $table->json('photos');
             $table->unsignedTinyInteger('rating')->nullable();
             $table->text('feedback')->nullable();
-            $table->timestamp('rated_at')->nullable();
+            $table->text('note')->nullable();
             $table->timestamps();
         });
 

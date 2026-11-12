@@ -32,9 +32,8 @@ class PaperInfolist
                     TextEntry::make('feedback')
                         ->label('Comment')
                         ->placeholder('No comment.'),
-                    TextEntry::make('rated_at')
-                        ->dateTime()
-                        ->placeholder('—'),
+                    TextEntry::make('note')
+                        ->placeholder('No note.'),
                     ImageEntry::make('photos')
                         ->label('Photos')
                         ->state(fn (Paper $record): array => array_column($record->photos, 'file_path'))
