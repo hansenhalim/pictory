@@ -24,7 +24,7 @@ class Paper extends Model
     /**
      * How feedback is stored: read by staff only, so the rating, comment and time share one text.
      */
-    public const string FEEDBACK_TEMPLATE = "Rating: {rating}/5 {stars}\nComment: {comment}\nCreated at: {createdAt}";
+    public const string FEEDBACK_TEMPLATE = "Rating: {rating}/5\nComment: {comment}\nCreated at: {createdAt}";
 
     /**
      * How a note is stored and shown: the message, then who sent it.
@@ -102,7 +102,6 @@ class Paper extends Model
     {
         return $this->fillOnce('feedback', strtr(self::FEEDBACK_TEMPLATE, [
             '{rating}' => $rating,
-            '{stars}' => str_repeat('★', $rating).str_repeat('☆', 5 - $rating),
             '{comment}' => $comment ?? '—',
             '{createdAt}' => now()->toIso8601String(),
         ]));
