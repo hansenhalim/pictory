@@ -11,10 +11,10 @@ export interface Camera {
 }
 
 /**
- * DSLR photos are scaled down to this on their longer side, the width the webcam is asked
- * for, which keeps them well under the backend's 10 MB limit per photo.
+ * DSLR and uploaded photos are scaled down to this on their longer side, the width the webcam
+ * is asked for, which keeps them well under the backend's 10 MB limit per photo.
  */
-const MAX_DSLR_PHOTO_SIZE = 4096
+const MAX_PHOTO_SIZE = 4096
 
 function encodePhoto(image: CanvasImageSource, width: number, height: number): Promise<Blob> {
   const canvas = Object.assign(document.createElement('canvas'), { width, height })
@@ -24,6 +24,21 @@ function encodePhoto(image: CanvasImageSource, width: number, height: number): P
   context.drawImage(image, 0, 0, width, height)
 
   return canvasToBlob(canvas, 'image/jpeg', 0.92)
+}
+
+/** Encode a photo no larger than `MAX_PHOTO_SIZE`, and let go of the bitmap. */
+async function encodeScaledPhoto(image: ImageBitmap): Promise<Blob> {
+  const scale = Math.min(1, MAX_PHOTO_SIZE / Math.max(image.width, image.height))
+
+  try {
+    return await encodePhoto(
+      image,
+      Math.round(image.width * scale),
+      Math.round(image.height * scale),
+    )
+  } finally {
+    image.close()
+  }
 }
 
 function wait(milliseconds: number) {
@@ -235,17 +250,8 @@ export class DslrCamera implements Camera {
         `The camera sent ${file.name}, which is not a JPEG. Set it to shoot JPEG only.`,
       )
     })
-    const scale = Math.min(1, MAX_DSLR_PHOTO_SIZE / Math.max(image.width, image.height))
 
-    try {
-      return await encodePhoto(
-        image,
-        Math.round(image.width * scale),
-        Math.round(image.height * scale),
-      )
-    } finally {
-      image.close()
-    }
+    return encodeScaledPhoto(image)
   }
 
   /** Stops the live view, leaving the camera connected for the next shoot. */
@@ -306,4 +312,40 @@ export async function listDslrs(): Promise<string[]> {
   const devices = await navigator.usb.getDevices()
 
   return devices.map((device) => device.productName || 'Unnamed camera')
+}
+
+/** A photo file the browser cannot decode, e.g. HEIC outside Safari. */
+export class UnsupportedPhotoError extends Error {}
+
+/**
+ * Let the operator pick a photo file in place of shooting one, e.g. a roaming photographer's
+ * shot, as a JPEG like the cameras take. Must be called from a tap, or the picker is blocked.
+ *
+ * @returns The photo, or null when the picker was closed without choosing one.
+ */
+export function pickPhoto(): Promise<Blob | null> {
+  const input = Object.assign(document.createElement('input'), {
+    type: 'file',
+    accept: 'image/*',
+  })
+
+  const file = new Promise<File | null>((resolve) => {
+    input.addEventListener('change', () => resolve(input.files?.[0] ?? null))
+    input.addEventListener('cancel', () => resolve(null))
+  })
+
+  input.click()
+
+  return file.then(async (chosen) => {
+    if (!chosen) {
+      return null
+    }
+
+    // Decoding applies the photo's EXIF orientation, so portraits stay upright.
+    const image = await createImageBitmap(chosen).catch(() => {
+      throw new UnsupportedPhotoError(`${chosen.name} is not a photo this browser can read.`)
+    })
+
+    return encodeScaledPhoto(image)
+  })
 }

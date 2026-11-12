@@ -2,6 +2,11 @@
 export const copy = {
   chooseFrame: 'Silakan pilih frame yang Anda inginkan',
   start: 'Mulai',
+  choosePhoto: 'Pilih foto',
+  changePhoto: 'Ganti',
+  choosePhotoForSlot: (slot: number, slots: number) =>
+    `Pilih foto untuk slot ${slot} dari ${slots}`,
+  unsupportedPhoto: 'Format foto tidak didukung. Pilih foto lain.',
   retake: 'Hapus',
   save: 'Simpan',
   finish: 'Selesai',

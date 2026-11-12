@@ -9,8 +9,11 @@ const THEME_COLORS = { dark: '#0a0a0a', light: '#fafafa' }
 export interface KioskSettings {
   /** Frames offered to customers, in the order they are shown. */
   enabledFrameIds: number[]
-  /** The webcam picked by `cameraDeviceId`, or the DSLR the operator allowed over USB. */
-  cameraSource: 'webcam' | 'dslr'
+  /**
+   * The webcam picked by `cameraDeviceId`, the DSLR the operator allowed over USB, or photo
+   * files the operator picks for each slot, which are never mirrored and have no clips.
+   */
+  cameraSource: 'webcam' | 'dslr' | 'upload'
   cameraDeviceId: string
   /**
    * Flip the live preview like a mirror, frame included. Only the screen is flipped: photos,
