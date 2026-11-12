@@ -318,14 +318,6 @@ video {
     overflow-wrap: anywhere;
 }
 
-.moment-note blockquote::before {
-    content: '“';
-}
-
-.moment-note blockquote::after {
-    content: '”';
-}
-
 .moment-buttons {
     display: flex;
     flex-wrap: wrap;

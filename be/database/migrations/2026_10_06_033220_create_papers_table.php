@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('clip_path')->nullable();
             $table->json('photos');
-            $table->unsignedTinyInteger('rating')->nullable();
             $table->text('feedback')->nullable();
             $table->text('note')->nullable();
             $table->timestamps();

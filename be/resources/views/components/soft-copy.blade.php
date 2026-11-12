@@ -11,7 +11,7 @@
     'isRated' => false,
     /** Where a guest's note for the moment's hosts is posted. */
     'noteUrl',
-    /** The note a guest already left on this paper, which stands for everyone in it. */
+    /** The signed note a guest already left on this paper, which stands for everyone in it. */
     'note' => null,
 ])
 
@@ -63,7 +63,7 @@
     <section class="space-y-3 rounded-lg bg-neutral-900 p-4" data-note-url="{{ $noteUrl }}">
         <figure data-note-shown @unless ($note) hidden @endunless class="space-y-2">
             <h2 class="font-semibold">Ucapan</h2>
-            <blockquote class="text-lg whitespace-pre-line text-neutral-100 italic">“<span data-note-text>{{ $note }}</span>”</blockquote>
+            <blockquote data-note-text class="text-lg whitespace-pre-line text-neutral-100">{{ $note }}</blockquote>
             <figcaption data-note-sent hidden class="text-sm text-neutral-400">Terkirim, terima kasih!</figcaption>
         </figure>
 
@@ -81,6 +81,18 @@
                     placeholder="Tulis ucapanmu di sini…"
                     class="block w-full rounded bg-neutral-800 p-3 text-neutral-100 placeholder:text-neutral-500"
                 ></textarea>
+                <label class="block space-y-1">
+                    <span class="text-sm text-neutral-400">Dari</span>
+                    <input
+                        type="text"
+                        name="sender"
+                        required
+                        maxlength="{{ \App\Http\Requests\StorePaperNoteRequest::SENDER_MAX_LENGTH }}"
+                        autocomplete="name"
+                        placeholder="Nama kamu"
+                        class="block w-full rounded bg-neutral-800 px-3 py-2 text-neutral-100 placeholder:text-neutral-500"
+                    >
+                </label>
                 <p data-note-error hidden role="alert" class="text-sm text-red-400">Gagal mengirim, coba lagi ya.</p>
                 <button type="submit" class="block w-full rounded bg-white py-3 text-center font-semibold text-neutral-950 disabled:opacity-50">
                     Kirim ucapan

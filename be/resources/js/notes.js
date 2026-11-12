@@ -1,5 +1,5 @@
 /**
- * Let a guest leave a note on a paper for the moment's hosts, e.g. a wish for the couple.
+ * Let a guest leave a signed note on a paper for the moment's hosts, e.g. a wish for the couple.
  *
  * A paper takes one note: the first guest to send one writes it for everyone in the photo,
  * which the server enforces. Whoever opens the page afterwards sees the note instead of the form.
@@ -48,6 +48,7 @@ for (const section of document.querySelectorAll('[data-note-url]')) {
     }
 
     const textarea = form.querySelector('textarea');
+    const senderInput = form.querySelector('input[name="sender"]');
     const submit = form.querySelector('button[type="submit"]');
     const error = form.querySelector('[data-note-error]');
 
@@ -55,9 +56,10 @@ for (const section of document.querySelectorAll('[data-note-url]')) {
         event.preventDefault();
 
         const note = textarea.value.trim();
+        const sender = senderInput.value.trim();
 
-        if (!note) {
-            textarea.focus();
+        if (!note || !sender) {
+            (note ? senderInput : textarea).focus();
             return;
         }
 
@@ -72,7 +74,7 @@ for (const section of document.querySelectorAll('[data-note-url]')) {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
                 },
-                body: JSON.stringify({ note }),
+                body: JSON.stringify({ note, sender }),
             });
 
             if (response.status !== 201 && response.status !== 409) {
@@ -85,7 +87,8 @@ for (const section of document.querySelectorAll('[data-note-url]')) {
                 rememberSent(url);
             }
 
-            // On 409 someone else in the photo wrote first; theirs is the paper's note.
+            // The server answers with the note as stored, signature included. On 409 it is the
+            // note someone else in the photo wrote first.
             show(data.note, response.status === 201);
         } catch {
             error.hidden = false;

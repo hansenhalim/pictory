@@ -35,7 +35,10 @@ class PaperNoteController extends Controller
      */
     private function store(StorePaperNoteRequest $request, Paper $paper): JsonResponse
     {
-        $recorded = $paper->leaveNote($request->string('note')->trim()->toString());
+        $recorded = $paper->leaveNote(
+            $request->string('note')->trim()->toString(),
+            $request->string('sender')->trim()->toString(),
+        );
 
         return response()->json(['data' => ['note' => $paper->note]], $recorded ? 201 : 409);
     }
