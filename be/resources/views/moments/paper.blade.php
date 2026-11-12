@@ -8,6 +8,7 @@
      * @var string $description
      * @var string $coverUrl
      * @var \Illuminate\Support\Carbon $takenAt
+     * @var string|null $note A guest's message to the moment's hosts.
      * @var string $downloadName The paper's file name when downloaded, without extension; photos get a counter appended.
      * @var string $paperUrl
      * @var string|null $clipUrl
@@ -33,6 +34,13 @@
             <p class="moment-eyebrow">Photo {{ str_pad($number, 2, '0', STR_PAD_LEFT) }} / {{ $paperCount }}</p>
             <h1>{{ $moment->name }}</h1>
             <p><time datetime="{{ $takenAt->toIso8601String() }}" data-local-time></time></p>
+
+            @if ($note)
+                <figure class="moment-note">
+                    <figcaption class="moment-eyebrow">A message</figcaption>
+                    <blockquote>{{ $note }}</blockquote>
+                </figure>
+            @endif
 
             <div class="moment-buttons">
                 <a class="moment-button moment-button-light" href="{{ $paperUrl }}" download="{{ $downloadName }}.png">Download photo <span>↓</span></a>

@@ -44,11 +44,11 @@ class PapersTable
                     ->tooltip(fn (Paper $record): ?string => $record->feedback)
                     ->wrap()
                     ->placeholder('—'),
-                TextColumn::make('rated_at')
-                    ->dateTime()
-                    ->placeholder('—')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('note')
+                    ->limit(60)
+                    ->tooltip(fn (Paper $record): ?string => $record->note)
+                    ->wrap()
+                    ->placeholder('—'),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
@@ -73,6 +73,9 @@ class PapersTable
                     ->options(collect(range(5, 1))->mapWithKeys(fn (int $stars): array => [$stars => str_repeat('★', $stars)])->all()),
                 TernaryFilter::make('feedback')
                     ->label('Has comment')
+                    ->nullable(),
+                TernaryFilter::make('note')
+                    ->label('Has note')
                     ->nullable(),
                 SelectFilter::make('deck')
                     ->options(fn (): array => QrCardsTable::deckOptions())

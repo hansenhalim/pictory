@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\PaperCardController;
 use App\Http\Controllers\Api\PaperController;
 use App\Http\Controllers\Api\ShortCodeController;
 use App\Http\Controllers\PaperFeedbackController;
+use App\Http\Controllers\PaperNoteController;
 use App\Http\Controllers\QrDeckPrintController;
 use App\Http\Controllers\SharedMomentController;
 use App\Http\Controllers\SharedPaperController;
@@ -25,11 +26,14 @@ Route::get('/c/{uuid}', [SharedQrCardController::class, 'show'])->whereUuid('uui
 Route::get('/C/{uuid}', [SharedQrCardController::class, 'show'])->whereUuid('uuid');
 
 /*
- * Guests rate the photobooth from the soft copy page after downloading it.
+ * From the soft copy page, guests rate the photobooth after downloading and leave a note for the
+ * moment's hosts.
  */
-Route::middleware('throttle:10,1')->name('feedback.')->group(function () {
-    Route::post('/p/{code}/feedback', [PaperFeedbackController::class, 'storeForShortCode'])->whereAlphaNumeric('code')->name('papers');
-    Route::post('/c/{uuid}/papers/{paperId}/feedback', [PaperFeedbackController::class, 'storeForCard'])->whereUuid('uuid')->whereNumber('paperId')->name('qr-cards');
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/p/{code}/feedback', [PaperFeedbackController::class, 'storeForShortCode'])->whereAlphaNumeric('code')->name('feedback.papers');
+    Route::post('/c/{uuid}/papers/{paperId}/feedback', [PaperFeedbackController::class, 'storeForCard'])->whereUuid('uuid')->whereNumber('paperId')->name('feedback.qr-cards');
+    Route::post('/p/{code}/note', [PaperNoteController::class, 'storeForShortCode'])->whereAlphaNumeric('code')->name('notes.papers');
+    Route::post('/c/{uuid}/papers/{paperId}/note', [PaperNoteController::class, 'storeForCard'])->whereUuid('uuid')->whereNumber('paperId')->name('notes.qr-cards');
 });
 
 Route::prefix('/m/{slug}')->where(['slug' => '[A-Za-z0-9-]+'])->name('moments.')->group(function () {

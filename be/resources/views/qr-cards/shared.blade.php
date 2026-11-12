@@ -3,7 +3,7 @@
      * The soft copy page a QR card opens: every session assigned to the card, newest first.
      * Until the first one arrives, it shows a waiting message and reloads itself.
      *
-     * @var list<array{takenAt: \Illuminate\Support\Carbon, downloadName: string, paperUrl: string, clipUrl: string|null, photoUrls: list<string>, feedbackUrl: string, isRated: bool}> $sessions
+     * @var list<array{takenAt: \Illuminate\Support\Carbon, downloadName: string, paperUrl: string, clipUrl: string|null, photoUrls: list<string>, feedbackUrl: string, isRated: bool, noteUrl: string, note: string|null}> $sessions
      */
 @endphp
 
@@ -17,7 +17,7 @@
         @unless ($sessions)
             <meta http-equiv="refresh" content="5">
         @endunless
-        @vite(['resources/css/app.css', 'resources/js/feedback.js'])
+        @vite(['resources/css/app.css', 'resources/js/feedback.js', 'resources/js/notes.js'])
     </head>
     <body class="min-h-screen bg-neutral-950 text-neutral-100 antialiased">
         <main class="mx-auto max-w-md space-y-8 px-4 py-8">
@@ -36,6 +36,8 @@
                         :photo-urls="$session['photoUrls']"
                         :feedback-url="$session['feedbackUrl']"
                         :is-rated="$session['isRated']"
+                        :note-url="$session['noteUrl']"
+                        :note="$session['note']"
                     />
                 </article>
             @empty

@@ -206,6 +206,10 @@ video {
     gap: 50px 30px;
 }
 
+.moment-entry {
+    position: relative;
+}
+
 .moment-entry img {
     width: 100%;
     height: auto;
@@ -224,6 +228,24 @@ video {
     font-size: 8px;
     letter-spacing: 0.14em;
     color: rgba(var(--moment-ink), 0.4);
+}
+
+.moment-entry .moment-entry-note {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--moment-bg);
+    box-shadow: 0 6px 16px var(--moment-shadow);
+    font-size: 15px;
+    letter-spacing: 0;
+    /* The label color above is translucent, which Chrome applies to emoji too. */
+    color: var(--moment-text);
 }
 
 .moment-page-caption {
@@ -279,6 +301,29 @@ video {
 
 .moment-delivery h1 {
     font-size: clamp(44px, 5.5vw, 76px);
+}
+
+.moment-note {
+    max-width: 440px;
+    margin: 35px 0 0;
+    padding-left: 22px;
+    border-left: 1px solid rgba(var(--moment-ink), 0.22);
+}
+
+.moment-note blockquote {
+    margin: 12px 0 0;
+    font: italic 400 22px / 1.45 var(--moment-display);
+    color: var(--moment-emphasis);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.moment-note blockquote::before {
+    content: '“';
+}
+
+.moment-note blockquote::after {
+    content: '”';
 }
 
 .moment-buttons {

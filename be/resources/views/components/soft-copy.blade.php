@@ -9,7 +9,15 @@
     'feedbackUrl',
     /** Whether a guest has rated this paper already, so nobody else is asked. */
     'isRated' => false,
+    /** Where a guest's note for the moment's hosts is posted. */
+    'noteUrl',
+    /** The note a guest already left on this paper, which stands for everyone in it. */
+    'note' => null,
 ])
+
+@php
+    $noteId = 'note-'.crc32($noteUrl);
+@endphp
 
 <div class="space-y-8" data-feedback-url="{{ $feedbackUrl }}" @if ($isRated) data-feedback-rated @endif>
     <section class="space-y-3">
@@ -51,4 +59,33 @@
             </div>
         </section>
     @endif
+
+    <section class="space-y-3 rounded-lg bg-neutral-900 p-4" data-note-url="{{ $noteUrl }}">
+        <figure data-note-shown @unless ($note) hidden @endunless class="space-y-2">
+            <h2 class="font-semibold">Ucapan</h2>
+            <blockquote class="text-lg whitespace-pre-line text-neutral-100 italic">“<span data-note-text>{{ $note }}</span>”</blockquote>
+            <figcaption data-note-sent hidden class="text-sm text-neutral-400">Terkirim, terima kasih!</figcaption>
+        </figure>
+
+        @unless ($note)
+            <form data-note-form class="space-y-3">
+                <h2 class="font-semibold">Tinggalkan ucapan</h2>
+                <p class="text-sm text-neutral-400">Ucapanmu akan ikut tampil di album acara ini.</p>
+                <label for="{{ $noteId }}" class="sr-only">Ucapan</label>
+                <textarea
+                    id="{{ $noteId }}"
+                    name="note"
+                    rows="4"
+                    required
+                    maxlength="{{ \App\Http\Requests\StorePaperNoteRequest::NOTE_MAX_LENGTH }}"
+                    placeholder="Tulis ucapanmu di sini…"
+                    class="block w-full rounded bg-neutral-800 p-3 text-neutral-100 placeholder:text-neutral-500"
+                ></textarea>
+                <p data-note-error hidden role="alert" class="text-sm text-red-400">Gagal mengirim, coba lagi ya.</p>
+                <button type="submit" class="block w-full rounded bg-white py-3 text-center font-semibold text-neutral-950 disabled:opacity-50">
+                    Kirim ucapan
+                </button>
+            </form>
+        @endunless
+    </section>
 </div>

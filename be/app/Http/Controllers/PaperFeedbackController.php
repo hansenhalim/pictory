@@ -2,31 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\FindsGuestPapers;
 use App\Http\Requests\StorePaperFeedbackRequest;
 use App\Models\Paper;
-use App\Models\QrCard;
-use App\Models\ShortCode;
 use Illuminate\Http\JsonResponse;
 
 /**
  * Takes a guest's feedback on the photobooth, asked on the soft copy page once they download it.
- *
- * The link a guest scanned is their only access, so feedback is taken through that same link.
  */
 class PaperFeedbackController extends Controller
 {
+    use FindsGuestPapers;
+
     /**
      * Rate the paper behind a printed QR code.
      */
     public function storeForShortCode(StorePaperFeedbackRequest $request, string $code): JsonResponse
     {
-        $paper = ShortCode::query()
-            ->with('paper')
-            ->where('code', strtoupper($code))
-            ->firstOrFail()
-            ->paper ?? abort(404);
-
-        return $this->store($request, $paper);
+        return $this->store($request, $this->findPaperByShortCode($code));
     }
 
     /**
@@ -34,13 +27,7 @@ class PaperFeedbackController extends Controller
      */
     public function storeForCard(StorePaperFeedbackRequest $request, string $uuid, int $paperId): JsonResponse
     {
-        $paper = QrCard::query()
-            ->where('uuid', strtolower($uuid))
-            ->firstOrFail()
-            ->papers()
-            ->findOrFail($paperId);
-
-        return $this->store($request, $paper);
+        return $this->store($request, $this->findPaperOnCard($uuid, $paperId));
     }
 
     /**

@@ -8,14 +8,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Carbon;
 
 /**
  * @property string|null $clip_path The clip paper: the paper as a video, its slots playing their behind-the-scenes clips.
  * @property non-empty-list<array{file_path: string, clip_path: string|null}> $photos The photos taken in the session, one per slot in slot order, each with the behind-the-scenes clip recorded during the countdown before it, if the kiosk made one.
  * @property int|null $rating The guest's 1 to 5 stars for the photobooth, asked after they download the soft copy.
  * @property string|null $feedback
- * @property Carbon|null $rated_at
+ * @property string|null $note A guest's message to the moment's hosts, e.g. a wedding wish for the couple, shown with the paper on the moment's pages.
  */
 #[Fillable(['ref', 'frame_id', 'file_path', 'clip_path', 'photos'])]
 class Paper extends Model
@@ -92,22 +91,42 @@ class Paper extends Model
      */
     public function rate(int $rating, ?string $comment): bool
     {
-        $ratedAt = now();
+        return $this->fillOnce('rating', ['rating' => $rating, 'feedback' => $comment]);
+    }
 
-        $recorded = self::query()
+    /**
+     * Record a guest's note, unless the paper has one already.
+     *
+     * A paper is often a group photo whose QR code several guests scan, so the first note written
+     * stands for the group and is never overwritten.
+     *
+     * @return bool Whether this note was recorded.
+     */
+    public function leaveNote(string $note): bool
+    {
+        return $this->fillOnce('note', ['note' => $note]);
+    }
+
+    /**
+     * Set the attributes in one query that only matches while `$column` is still empty, so of two
+     * guests submitting at once, only the first is recorded.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function fillOnce(string $column, array $attributes): bool
+    {
+        $isRecorded = self::query()
             ->whereKey($this->getKey())
-            ->whereNull('rated_at')
-            ->update([
-                'rating' => $rating,
-                'feedback' => $comment,
-                'rated_at' => $ratedAt,
-            ]) === 1;
+            ->whereNull($column)
+            ->update($attributes) === 1;
 
-        if ($recorded) {
-            $this->forceFill(['rating' => $rating, 'feedback' => $comment, 'rated_at' => $ratedAt])->syncOriginal();
+        if ($isRecorded) {
+            $this->forceFill($attributes)->syncOriginal();
+        } else {
+            $this->refresh();
         }
 
-        return $recorded;
+        return $isRecorded;
     }
 
     /**
@@ -119,7 +138,6 @@ class Paper extends Model
     {
         return [
             'photos' => 'array',
-            'rated_at' => 'datetime',
         ];
     }
 }
