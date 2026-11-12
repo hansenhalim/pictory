@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $clip_path The clip paper: the paper as a video, its slots playing their behind-the-scenes clips.
  * @property non-empty-list<array{file_path: string, clip_path: string|null}> $photos The photos taken in the session, one per slot in slot order, each with the behind-the-scenes clip recorded during the countdown before it, if the kiosk made one.
  * @property int|null $rating The guest's 1 to 5 stars for the photobooth, asked after they download the soft copy.
- * @property string|null $feedback_comment
+ * @property string|null $feedback
  * @property Carbon|null $rated_at
  */
 #[Fillable(['ref', 'frame_id', 'file_path', 'clip_path', 'photos'])]
@@ -99,12 +99,12 @@ class Paper extends Model
             ->whereNull('rated_at')
             ->update([
                 'rating' => $rating,
-                'feedback_comment' => $comment,
+                'feedback' => $comment,
                 'rated_at' => $ratedAt,
             ]) === 1;
 
         if ($recorded) {
-            $this->forceFill(['rating' => $rating, 'feedback_comment' => $comment, 'rated_at' => $ratedAt])->syncOriginal();
+            $this->forceFill(['rating' => $rating, 'feedback' => $comment, 'rated_at' => $ratedAt])->syncOriginal();
         }
 
         return $recorded;
