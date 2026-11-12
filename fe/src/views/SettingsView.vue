@@ -104,6 +104,7 @@ async function retryUploads() {
 const cameraSources = [
   { value: 'webcam', label: 'Webcam' },
   { value: 'dslr', label: 'DSLR' },
+  { value: 'upload', label: 'File' },
 ] as const
 
 const themes = [
@@ -331,7 +332,7 @@ onMounted(() => {
         <span v-if="cameraError" class="text-sm text-red-400">{{ cameraError }}</span>
       </label>
 
-      <div v-else class="space-y-1">
+      <div v-else-if="settingsStore.settings.cameraSource === 'dslr'" class="space-y-1">
         <span class="text-sm text-neutral-400">Device</span>
         <div class="flex gap-3">
           <p class="min-w-0 flex-1 truncate rounded bg-neutral-800 px-3 py-2">
@@ -358,34 +359,41 @@ onMounted(() => {
         </p>
       </div>
 
-      <label class="flex items-center gap-3">
-        <input v-model="settingsStore.settings.mirrorPreview" type="checkbox" class="size-5" />
-        <span>Mirror the preview</span>
-      </label>
+      <p v-if="settingsStore.settings.cameraSource === 'upload'" class="text-sm text-neutral-400">
+        The operator picks a photo file for each slot. Photos are cropped to fit like camera shots,
+        are not mirrored, and have no behind-the-scenes clips.
+      </p>
 
-      <div class="space-y-1">
+      <template v-else>
         <label class="flex items-center gap-3">
-          <input v-model="settingsStore.settings.recordClips" type="checkbox" class="size-5" />
-          <span>Behind the scenes</span>
+          <input v-model="settingsStore.settings.mirrorPreview" type="checkbox" class="size-5" />
+          <span>Mirror the preview</span>
         </label>
-        <p
-          v-if="settingsStore.settings.recordClips && !isClipRecordingSupported"
-          class="text-sm text-red-400"
-        >
-          This browser cannot record AV1 video, so no clips are made.
-        </p>
-      </div>
 
-      <label class="block space-y-1">
-        <span class="text-sm text-neutral-400">Countdown (seconds)</span>
-        <input
-          v-model.number="countdownSeconds"
-          type="number"
-          min="1"
-          max="10"
-          class="w-24 rounded bg-neutral-800 px-3 py-2"
-        />
-      </label>
+        <div class="space-y-1">
+          <label class="flex items-center gap-3">
+            <input v-model="settingsStore.settings.recordClips" type="checkbox" class="size-5" />
+            <span>Behind the scenes</span>
+          </label>
+          <p
+            v-if="settingsStore.settings.recordClips && !isClipRecordingSupported"
+            class="text-sm text-red-400"
+          >
+            This browser cannot record AV1 video, so no clips are made.
+          </p>
+        </div>
+
+        <label class="block space-y-1">
+          <span class="text-sm text-neutral-400">Countdown (seconds)</span>
+          <input
+            v-model.number="countdownSeconds"
+            type="number"
+            min="1"
+            max="10"
+            class="w-24 rounded bg-neutral-800 px-3 py-2"
+          />
+        </label>
+      </template>
     </section>
 
     <section class="flex items-center justify-between gap-4 rounded-lg bg-neutral-900 p-6">

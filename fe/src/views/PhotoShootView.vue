@@ -4,7 +4,13 @@ import { useRouter } from 'vue-router'
 import { useObjectUrl } from '@vueuse/core'
 import KioskButton from '@/components/KioskButton.vue'
 import { copy } from '@/copy'
-import { type Camera, DslrCamera, WebcamCamera } from '@/lib/camera'
+import {
+  type Camera,
+  DslrCamera,
+  pickPhoto,
+  UnsupportedPhotoError,
+  WebcamCamera,
+} from '@/lib/camera'
 import { ClipRecorder } from '@/lib/clip'
 import { useFramesStore } from '@/stores/frames'
 import { useSessionStore } from '@/stores/session'
@@ -15,10 +21,17 @@ const framesStore = useFramesStore()
 const sessionStore = useSessionStore()
 const { settings } = useSettingsStore()
 
-const camera: Camera =
-  settings.cameraSource === 'dslr'
+/** The operator picks a photo file for each slot instead of shooting one. */
+const isUpload = settings.cameraSource === 'upload'
+
+const camera: Camera | null = isUpload
+  ? null
+  : settings.cameraSource === 'dslr'
     ? new DslrCamera()
     : new WebcamCamera({ deviceId: settings.cameraDeviceId })
+
+/** A photographer's shot is shown as taken, never mirrored. */
+const isMirrored = settings.mirrorPreview && !isUpload
 const video = useTemplateRef('video')
 
 /** Shooting waits for the camera, so the first photo and clip are not taken from an empty stream. */
@@ -27,6 +40,7 @@ const isCameraUnavailable = ref(false)
 const countdown = ref(0)
 const isCountingDown = ref(false)
 const hasCaptureFailed = ref(false)
+const hasUnsupportedPhoto = ref(false)
 const captured = ref<Blob | null>(null)
 const capturedUrl = useObjectUrl(captured)
 /** The behind-the-scenes clip of the countdown before `captured`. */
@@ -150,7 +164,7 @@ async function start() {
 
   // A DSLR can refuse to shoot, e.g. when it cannot focus, so the customer may try again.
   try {
-    const photo = await camera.capture()
+    const photo = await camera!.capture()
 
     // Saving appears with the photo, so the photo waits for the clip saved along with it.
     capturedClip.value = await clip
@@ -167,12 +181,42 @@ async function start() {
   }
 }
 
+/** Pick a photo file for the slot. Closing the picker keeps whatever the slot had. */
+async function choose() {
+  hasCaptureFailed.value = false
+  hasUnsupportedPhoto.value = false
+
+  try {
+    const photo = await pickPhoto()
+
+    if (!photo || isLeaving) {
+      return
+    }
+
+    capturedClip.value = null
+    captured.value = photo
+
+    if (isLastSlot.value) {
+      sessionStore.prerender(photo)
+    }
+  } catch (error) {
+    console.error(error)
+
+    if (error instanceof UnsupportedPhotoError) {
+      hasUnsupportedPhoto.value = true
+    } else {
+      hasCaptureFailed.value = true
+    }
+  }
+}
+
 function retake() {
   captured.value = null
   capturedClip.value = null
 }
 
 function save() {
+  hasUnsupportedPhoto.value = false
   sessionStore.addPhoto(captured.value!, capturedClip.value)
   captured.value = null
   capturedClip.value = null
@@ -199,6 +243,10 @@ function finish() {
 }
 
 onMounted(async () => {
+  if (!camera) {
+    return
+  }
+
   try {
     stream = await camera.start()
 
@@ -216,7 +264,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   isLeaving = true
   void recorder?.stop()
-  camera.stop()
+  camera?.stop()
 })
 </script>
 
@@ -224,9 +272,10 @@ onBeforeUnmount(() => {
   <main class="flex h-full flex-col items-center justify-center gap-[4vh] px-8 py-6">
     <div class="relative overflow-hidden rounded bg-black" :style="viewportStyle">
       <!-- Mirrored frame and all, the captured photo too, so it does not jump when taken. -->
-      <div class="absolute inset-0" :class="{ '-scale-x-100': settings.mirrorPreview }">
+      <div class="absolute inset-0" :class="{ '-scale-x-100': isMirrored }">
         <div class="absolute" :style="photoStyle">
           <video
+            v-if="!isUpload"
             ref="video"
             autoplay
             muted
@@ -268,6 +317,13 @@ onBeforeUnmount(() => {
       </div>
 
       <div
+        v-if="isUpload && !captured && !sessionStore.isComplete"
+        class="absolute inset-0 flex items-center justify-center p-8 text-center text-3xl text-white drop-shadow-lg"
+      >
+        {{ copy.choosePhotoForSlot(slotIndex + 1, frame.slots.length) }}
+      </div>
+
+      <div
         v-if="isCameraUnavailable"
         class="absolute inset-0 flex items-center justify-center text-2xl text-neutral-400"
       >
@@ -284,9 +340,19 @@ onBeforeUnmount(() => {
       </template>
 
       <template v-else-if="captured">
-        <KioskButton variant="secondary" @click="retake">{{ copy.retake }}</KioskButton>
+        <p v-if="hasUnsupportedPhoto" class="text-xl text-red-400">{{ copy.unsupportedPhoto }}</p>
+        <KioskButton v-if="isUpload" variant="secondary" @click="choose">
+          {{ copy.changePhoto }}
+        </KioskButton>
+        <KioskButton v-else variant="secondary" @click="retake">{{ copy.retake }}</KioskButton>
         <KioskButton v-if="isLastSlot" @click="finish">{{ copy.finish }}</KioskButton>
         <KioskButton v-else @click="save">{{ copy.save }}</KioskButton>
+      </template>
+
+      <template v-else-if="isUpload">
+        <p v-if="hasUnsupportedPhoto" class="text-xl text-red-400">{{ copy.unsupportedPhoto }}</p>
+        <p v-else-if="hasCaptureFailed" class="text-xl text-red-400">{{ copy.captureFailed }}</p>
+        <KioskButton @click="choose">{{ copy.choosePhoto }}</KioskButton>
       </template>
 
       <template v-else-if="!isCountingDown">
