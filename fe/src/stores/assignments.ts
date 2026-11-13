@@ -55,6 +55,10 @@ export const useAssignmentsStore = defineStore('assignments', () => {
 
   /** Put a session on a card, or take it off its card when the card is null. */
   async function assign(ref: string, card: string | null) {
+    if (card) {
+      lastCard.value = card
+    }
+
     await (await db).put('assignments', { ref, card, createdAt: Date.now() })
     await printsStore.update(ref, { card, cardError: null })
     await refreshPending()

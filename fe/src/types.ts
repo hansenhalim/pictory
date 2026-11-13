@@ -28,8 +28,12 @@ export interface Frame {
 export interface PrintRecord {
   ref: string
   createdAt: number
-  /** Exactly what was sent to the printer, QR codes included. */
+  /** Shown in the gallery: the paper without QR codes. */
+  softCopy: Blob
+  /** Exactly what was sent to the printer, QR codes included. Reprinted as is. */
   printCopy: Blob
+  /** The short code the QR codes link to, shown on screen; null when none was left. */
+  code: string | null
   cut: boolean
   /** The QR card the operator assigned the session to, e.g. "342". Missing on older prints. */
   card?: string | null

@@ -18,11 +18,11 @@ interface KioskDatabase extends DBSchema {
 
 /**
  * Everything the kiosk needs to keep running offline: the frames and their images, the
- * sessions still waiting to be uploaded, and the history of prints for reprinting, and the QR cards still waiting to be assigned. Blobs are
- * too large for localStorage.
+ * sessions still waiting to be uploaded, the gallery of prints for reprinting, and the QR
+ * cards still waiting to be assigned. Blobs are too large for localStorage.
  */
-export const db = openDB<KioskDatabase>('pictory-kiosk', 3, {
-  upgrade(database, oldVersion) {
+export const db = openDB<KioskDatabase>('pictory-kiosk', 4, {
+  upgrade(database, oldVersion, _newVersion, transaction) {
     if (oldVersion < 1) {
       database.createObjectStore('frames', { keyPath: 'id' })
       database.createObjectStore('frameImages', { keyPath: 'frameId' })
@@ -39,6 +39,11 @@ export const db = openDB<KioskDatabase>('pictory-kiosk', 3, {
       database
         .createObjectStore('assignments', { keyPath: 'ref' })
         .createIndex('createdAt', 'createdAt')
+    }
+
+    // Prints kept before this version have no soft copy or code, so the history starts over.
+    if (oldVersion >= 2 && oldVersion < 4) {
+      void transaction.objectStore('prints').clear()
     }
   },
 })

@@ -134,23 +134,20 @@ export const useSessionStore = defineStore('session', () => {
     await printsStore.save({
       ref: sessionRef.value,
       createdAt: Date.now(),
+      softCopy: paper.softCopy,
       printCopy: paper.printCopy,
+      code: code.value,
       cut: currentFrame.cut,
     })
   }
 
-  /** Assign the finished session to a QR card, and offer that card again for the next session. */
+  /** Assign the finished session to a QR card. */
   async function assignCard(label: string | null) {
     if (!sessionRef.value) {
       throw new Error('There is no session to assign.')
     }
 
     card.value = label
-
-    if (label) {
-      assignmentsStore.lastCard = label
-    }
-
     await assignmentsStore.assign(sessionRef.value, label)
   }
 

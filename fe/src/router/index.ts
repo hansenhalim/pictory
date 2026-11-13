@@ -3,6 +3,7 @@ import { whenUnauthorized } from '@/lib/api'
 import { useFramesStore } from '@/stores/frames'
 import { useSessionStore } from '@/stores/session'
 import FrameSelectionView from '@/views/FrameSelectionView.vue'
+import GalleryView from '@/views/GalleryView.vue'
 import PhotoShootView from '@/views/PhotoShootView.vue'
 import ResultView from '@/views/ResultView.vue'
 import SettingsView from '@/views/SettingsView.vue'
@@ -12,6 +13,7 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'frames', component: FrameSelectionView },
     { path: '/settings', name: 'settings', component: SettingsView },
+    { path: '/gallery', name: 'gallery', component: GalleryView },
     { path: '/shoot', name: 'shoot', component: PhotoShootView },
     { path: '/result', name: 'result', component: ResultView },
     { path: '/:pathMatch(.*)*', redirect: '/' },
@@ -19,7 +21,7 @@ const router = createRouter({
 })
 
 /** Screens between customers, where sending the operator to sign in interrupts nobody. */
-const idleRouteNames = ['frames', 'settings']
+const idleRouteNames = ['frames', 'settings', 'gallery']
 
 let isSignedOut = false
 

@@ -3,17 +3,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useIntervalFn, useNow, useOnline } from '@vueuse/core'
 import { checkAgent, LOW_SHEETS } from '@/lib/agent'
-import PrintThumbnail from '@/components/PrintThumbnail.vue'
-import ReprintDialog from '@/components/ReprintDialog.vue'
 import { chooseDslr, DslrCamera, listCameras, listDslrs } from '@/lib/camera'
 import { canRecordClips } from '@/lib/clip'
 import { useDeviceStore } from '@/stores/device'
 import { useFramesStore } from '@/stores/frames'
-import { usePrintsStore } from '@/stores/prints'
 import { useSettingsStore } from '@/stores/settings'
 import { useShortCodesStore } from '@/stores/shortCodes'
 import { useUploadsStore } from '@/stores/uploads'
-import type { PrintRecord } from '@/types'
 
 const router = useRouter()
 const framesStore = useFramesStore()
@@ -21,7 +17,6 @@ const settingsStore = useSettingsStore()
 const shortCodesStore = useShortCodesStore()
 const uploadsStore = useUploadsStore()
 const deviceStore = useDeviceStore()
-const printsStore = usePrintsStore()
 const isOnline = useOnline()
 const now = useNow({ scheduler: (tick) => useIntervalFn(tick, 1000) })
 
@@ -36,42 +31,6 @@ const printerStatus = ref<{ isReady: boolean; message: string; sheetsLeft: numbe
 )
 const isTestingPrinter = ref(false)
 const isRetryingUploads = ref(false)
-const selectedPrint = ref<PrintRecord | null>(null)
-const isConfirmingClear = ref(false)
-
-let clearConfirmationTimer: ReturnType<typeof setTimeout> | undefined
-
-const storageUsed = computed(() => {
-  let size = deviceStore.storageUsedBytes
-
-  if (size === null) {
-    return null
-  }
-
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let unit = 0
-
-  while (size >= 1024 && unit < units.length - 1) {
-    size /= 1024
-    unit++
-  }
-
-  return `${size.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
-})
-
-/** Clearing takes a second tap within a few seconds, so a stray tap cannot wipe the history. */
-async function clearHistory() {
-  if (!isConfirmingClear.value) {
-    isConfirmingClear.value = true
-    clearConfirmationTimer = setTimeout(() => (isConfirmingClear.value = false), 4000)
-    return
-  }
-
-  clearTimeout(clearConfirmationTimer)
-  isConfirmingClear.value = false
-  await printsStore.clear()
-  await deviceStore.refreshStorageUsage()
-}
 
 const waitingSessions = computed(() => {
   const count = uploadsStore.pendingCount
@@ -213,8 +172,6 @@ function launch() {
 }
 
 onMounted(() => {
-  void printsStore.load()
-  void deviceStore.refreshStorageUsage()
   void deviceStore.requestPersistentStorage()
   void framesStore.sync().catch(() => {})
   void loadCameras()
@@ -482,75 +439,24 @@ onMounted(() => {
       </p>
     </section>
 
-    <section
-      v-if="printsStore.total > 0 || printsStore.saveError || uploadsStore.lastError"
-      class="space-y-4 rounded-lg bg-neutral-900 p-6"
+    <div
+      v-if="uploadsStore.lastError"
+      class="flex items-start justify-between gap-4 rounded-lg border border-red-500/40 bg-red-950/60 p-4"
     >
-      <div class="flex items-center justify-between gap-4">
-        <div>
-          <h2 class="font-semibold">Gallery</h2>
-          <p class="text-sm text-neutral-400">
-            {{ printsStore.total }} {{ printsStore.total === 1 ? 'print' : 'prints' }}
-            <template v-if="storageUsed">· {{ storageUsed }} stored on this kiosk</template>
-          </p>
-        </div>
-
-        <button
-          v-if="printsStore.total > 0"
-          type="button"
-          class="rounded px-4 py-2 text-sm"
-          :class="isConfirmingClear ? 'bg-red-700 font-semibold' : 'bg-neutral-800'"
-          @click="clearHistory"
-        >
-          {{
-            isConfirmingClear ? `Tap again to delete ${printsStore.total} prints` : 'Clear history'
-          }}
-        </button>
-      </div>
-
-      <div
-        v-if="uploadsStore.lastError"
-        class="flex items-start justify-between gap-4 rounded-lg border border-red-500/40 bg-red-950/60 p-4"
-      >
-        <div class="space-y-1">
-          <h3 class="font-semibold text-red-300">Uploads are failing</h3>
-          <p class="text-red-100">{{ uploadsStore.lastError }}</p>
-          <p class="text-sm text-red-300/80">{{ waitingSessions }} {{ nextRetryLabel }}</p>
-        </div>
-
-        <button
-          type="button"
-          class="shrink-0 rounded bg-red-700 px-4 py-2 font-semibold disabled:opacity-40"
-          :disabled="isRetryingUploads"
-          @click="retryUploads"
-        >
-          Retry now
-        </button>
-      </div>
-
-      <p v-if="printsStore.saveError" class="text-sm text-amber-400">
-        The latest print could not be kept for reprinting. {{ printsStore.saveError }}
-      </p>
-
-      <div class="grid grid-cols-4 gap-4 sm:grid-cols-6">
-        <PrintThumbnail
-          v-for="print in printsStore.prints"
-          :key="print.ref"
-          :print="print"
-          @click="selectedPrint = print"
-        />
+      <div class="space-y-1">
+        <h3 class="font-semibold text-red-300">Uploads are failing</h3>
+        <p class="text-red-100">{{ uploadsStore.lastError }}</p>
+        <p class="text-sm text-red-300/80">{{ waitingSessions }} {{ nextRetryLabel }}</p>
       </div>
 
       <button
-        v-if="printsStore.prints.length < printsStore.total"
         type="button"
-        class="w-full rounded bg-neutral-800 py-2"
-        @click="printsStore.loadMore()"
+        class="shrink-0 rounded bg-red-700 px-4 py-2 font-semibold disabled:opacity-40"
+        :disabled="isRetryingUploads"
+        @click="retryUploads"
       >
-        Show more
+        Retry now
       </button>
-    </section>
-
-    <ReprintDialog v-if="selectedPrint" :print="selectedPrint" @close="selectedPrint = null" />
+    </div>
   </main>
 </template>

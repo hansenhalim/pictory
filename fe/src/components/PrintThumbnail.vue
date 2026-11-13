@@ -9,7 +9,7 @@ const { print } = defineProps<{
 }>()
 
 const assignmentsStore = useAssignmentsStore()
-const imageUrl = useObjectUrl(() => print.printCopy)
+const imageUrl = useObjectUrl(() => print.softCopy)
 
 const timeFormat = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' })
 const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
