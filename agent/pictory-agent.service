@@ -1,10 +1,16 @@
-# systemd unit for the kiosk's print agent. Install with:
+# systemd unit for the kiosk's print agent. On a Debian kiosk, install or upgrade the agent,
+# CUPS and the DS-RX1 with the installer at be/public/agent.sh:
+#
+#   curl -fsSL https://pictory.id/agent.sh | sudo bash
+#
+# It fetches this unit and the binary from the rolling agent-latest release, which
+# .github/workflows/agent.yml rebuilds on every push to main that touches agent/. By hand:
 #
 #   sudo install -m 755 dist/pictory-agent /usr/local/bin/
 #   sudo install -m 644 pictory-agent.service /etc/systemd/system/
 #   sudo systemctl enable --now pictory-agent
 #
-# Chrome asks for Local Network Access permission the first time https://pictory.id calls
+# The installer pre-grants the permission below. Otherwise Chrome asks for Local Network Access permission the first time https://pictory.id calls
 # the agent on 127.0.0.1. Accept it once from the kiosk's Settings > Test printer, or
 # pre-grant it with a managed policy, e.g. /etc/chromium/policies/managed/pictory.json:
 #
