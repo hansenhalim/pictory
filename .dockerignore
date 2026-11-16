@@ -1,5 +1,4 @@
-# Ignore rules for be/Dockerfile, which is built with the repository root as context
-# (docker build -f be/Dockerfile .). Paths are relative to the repository root.
+# Ignore rules for the Dockerfile next to this file (docker build .).
 
 # Only be/ and fe/ are needed.
 *
@@ -40,7 +39,3 @@ be/storage/app/private/*
 be/storage/app/public/*
 be/bootstrap/cache/*.php
 be/database/*.sqlite*
-
-# Docker files themselves.
-be/Dockerfile
-be/Dockerfile.dockerignore
