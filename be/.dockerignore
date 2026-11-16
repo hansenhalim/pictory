@@ -1,0 +1,35 @@
+# Secrets and local environment: the image gets its config from the container environment.
+.env
+.env.*
+.claude
+.mcp.json
+.git
+.github
+
+# Dependencies and build output are produced inside the image.
+vendor
+node_modules
+public/build
+public/hot
+public/storage
+public/css/filament
+public/js/filament
+public/fonts/filament
+public/fonts-manifest.dev.json
+public/kiosk
+
+# Local runtime state.
+*.log
+storage/*.key
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/private/*
+storage/app/public/*
+bootstrap/cache/*.php
+database/*.sqlite*
+
+# Docker files themselves.
+Dockerfile
+.dockerignore
