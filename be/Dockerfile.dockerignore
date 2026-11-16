@@ -1,0 +1,46 @@
+# Ignore rules for be/Dockerfile, which is built with the repository root as context
+# (docker build -f be/Dockerfile .). Paths are relative to the repository root.
+
+# Only be/ and fe/ are needed.
+*
+!be
+!fe
+
+# Secrets and local environment: the image gets its config from the container environment.
+**/.env
+**/.env.*
+**/.claude
+**/.mcp.json
+**/.vscode
+**/.idea
+
+# Dependencies and build output are produced inside the image.
+**/node_modules
+be/vendor
+be/public/build
+be/public/hot
+be/public/storage
+be/public/css/filament
+be/public/js/filament
+be/public/fonts/filament
+be/public/fonts-manifest.dev.json
+be/public/kiosk
+fe/dist
+**/*.tsbuildinfo
+**/.eslintcache
+
+# Local runtime state.
+**/*.log
+be/storage/*.key
+be/storage/logs/*
+be/storage/framework/cache/data/*
+be/storage/framework/sessions/*
+be/storage/framework/views/*
+be/storage/app/private/*
+be/storage/app/public/*
+be/bootstrap/cache/*.php
+be/database/*.sqlite*
+
+# Docker files themselves.
+be/Dockerfile
+be/Dockerfile.dockerignore
