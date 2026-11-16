@@ -1,0 +1,62 @@
+# Builds the kiosk print agent and publishes it to the rolling `agent-latest` release,
+# which https://pictory.id/agent.sh (be/public/agent.sh) installs from.
+name: agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - agent/**
+      - .github/workflows/agent.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: agent-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: agent/go.mod
+          cache: false
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: |
+          mkdir -p dist
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch \
+              go build -trimpath -ldflags '-s -w' -o "dist/pictory-agent-linux-$arch" .
+          done
+          cp pictory-agent.service dist/
+          (cd dist && sha256sum * > sha256sums.txt)
+
+      - name: Publish agent-latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git tag -f agent-latest "$GITHUB_SHA"
+          git push -f origin refs/tags/agent-latest
+
+          notes="Rolling build of agent/ from ${GITHUB_SHA}. Install on a kiosk with: curl -fsSL https://pictory.id/agent.sh | sudo bash"
+
+          if gh release view agent-latest >/dev/null 2>&1; then
+            gh release edit agent-latest --notes "$notes"
+          else
+            gh release create agent-latest --title 'Pictory agent (latest)' --notes "$notes" --latest=false
+          fi
+
+          gh release upload agent-latest dist/* --clobber
