@@ -128,6 +128,10 @@ ENV APP_ENV=production \
 # COOP/COEP headers. Send the kiosk shell to Laravel instead (FrankenPHP still hands Laravel
 # the original REQUEST_URI), and add the same headers to the kiosk's static files (its
 # service worker caches index.html, and its workers need COEP).
+#
+# The headers are deferred so they replace the route's copies rather than join them:
+# FrankenPHP adds PHP's headers to any Caddy already set, and a doubled
+# "same-origin, same-origin" is invalid, which leaves the page not isolated.
 COPY <<'EOF' /etc/frankenphp/Caddyfile
 {
 	skip_install_trust
@@ -154,6 +158,7 @@ COPY <<'EOF' /etc/frankenphp/Caddyfile
 	header /kiosk/* {
 		Cross-Origin-Opener-Policy "same-origin"
 		Cross-Origin-Embedder-Policy "credentialless"
+		defer
 	}
 
 	php_server
