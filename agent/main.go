@@ -9,8 +9,10 @@
 //	GET  /health  reports whether the printer is known to CUPS, and how many sheets it has left
 //	POST /print   multipart: paper (PNG), copies (1-20), cut (bool)
 //
-// It listens on loopback only. Any origin may print by default; pass -origins to accept
-// only the listed ones, since any web page can send a form POST to localhost.
+// It listens on all interfaces (0.0.0.0:8001) by default, so other machines on the network
+// can reach it; pass -addr 127.0.0.1:8001 to keep it on loopback. Any origin may print by
+// default; pass -origins to accept only the listed ones, since any web page can send a form
+// POST to the agent.
 //
 // Build for the kiosk with:
 //
@@ -54,7 +56,7 @@ type server struct {
 }
 
 func main() {
-	addr := flag.String("addr", env("PICTORY_AGENT_ADDR", "127.0.0.1:8001"), "address to listen on")
+	addr := flag.String("addr", env("PICTORY_AGENT_ADDR", "0.0.0.0:8001"), "address to listen on")
 	printer := flag.String("printer", env("PICTORY_AGENT_PRINTER", "DS-RX1"), "CUPS printer name")
 	origins := flag.String("origins", env("PICTORY_AGENT_ORIGINS", "*"), "comma-separated origins allowed to print, or * for any")
 	dryRun := flag.Bool("dry-run", os.Getenv("PICTORY_AGENT_DRY_RUN") == "true", "log lp commands instead of running them")
@@ -139,29 +141,35 @@ func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-var markerLevels = regexp.MustCompile(`(?:^|\s)marker-levels=(-?\d+)`)
+// Gutenprint's dye-sub backend reports the media left as a marker message, such as
+// marker-message='28 native prints remaining on 6x4 (PC) media'. The marker level beside
+// it is a percentage of the ribbon, not a count of prints.
+var printsRemaining = regexp.MustCompile(`(?:^|\s)marker-message=['"]?(\d+) (?:native )?prints? remaining`)
 
-// sheetsLeft reads the media count the printer's backend last reported to CUPS as its
-// marker level. CUPS only refreshes it when a job runs, so it lags until the next print.
-// It is nil when unknown: no level was reported, or a negative one, which IPP uses for
-// "unknown" and "not empty".
+// sheetsLeft reads the media count the printer's backend last reported to CUPS.
+// CUPS only refreshes it when a job runs, so it lags until the next print.
+// It is nil when unknown.
 func (s *server) sheetsLeft(ctx context.Context) *int {
 	output, err := s.run(ctx, "lpoptions", "-p", s.printer)
 	if err != nil {
 		return nil
 	}
 
-	match := markerLevels.FindSubmatch(output)
+	return parseSheetsLeft(output)
+}
+
+func parseSheetsLeft(lpoptions []byte) *int {
+	match := printsRemaining.FindSubmatch(lpoptions)
 	if match == nil {
 		return nil
 	}
 
-	level, err := strconv.Atoi(string(match[1]))
-	if err != nil || level < 0 {
+	count, err := strconv.Atoi(string(match[1]))
+	if err != nil {
 		return nil
 	}
 
-	return &level
+	return &count
 }
 
 func (s *server) print(w http.ResponseWriter, r *http.Request) {
