@@ -33,7 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->multiFactorAuthentication([
                 AppAuthentication::make()
                     ->recoverable(),
-            ], isRequired: true)
+            ], isRequired: app()->isProduction())
             ->colors([
                 'primary' => Color::Amber,
             ])
