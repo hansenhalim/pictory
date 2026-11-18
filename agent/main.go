@@ -9,8 +9,10 @@
 //	GET  /health  reports whether the printer is known to CUPS, and how many sheets it has left
 //	POST /print   multipart: paper (PNG), copies (1-20), cut (bool)
 //
-// It listens on loopback only. Any origin may print by default; pass -origins to accept
-// only the listed ones, since any web page can send a form POST to localhost.
+// It listens on all interfaces (0.0.0.0:8001) by default, so other machines on the network
+// can reach it; pass -addr 127.0.0.1:8001 to keep it on loopback. Any origin may print by
+// default; pass -origins to accept only the listed ones, since any web page can send a form
+// POST to the agent.
 //
 // Build for the kiosk with:
 //
@@ -54,7 +56,7 @@ type server struct {
 }
 
 func main() {
-	addr := flag.String("addr", env("PICTORY_AGENT_ADDR", "127.0.0.1:8001"), "address to listen on")
+	addr := flag.String("addr", env("PICTORY_AGENT_ADDR", "0.0.0.0:8001"), "address to listen on")
 	printer := flag.String("printer", env("PICTORY_AGENT_PRINTER", "DS-RX1"), "CUPS printer name")
 	origins := flag.String("origins", env("PICTORY_AGENT_ORIGINS", "*"), "comma-separated origins allowed to print, or * for any")
 	dryRun := flag.Bool("dry-run", os.Getenv("PICTORY_AGENT_DRY_RUN") == "true", "log lp commands instead of running them")

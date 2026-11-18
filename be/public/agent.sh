@@ -10,7 +10,7 @@
 #
 # It installs CUPS with Gutenprint, adds the USB DNP DS-RX1 as the CUPS printer "DS-RX1",
 # installs the latest agent build from the rolling `agent-latest` GitHub release as a systemd
-# service on 127.0.0.1:8001, and pre-grants https://pictory.id Local Network Access in
+# service listening on 0.0.0.0:8001, and pre-grants https://pictory.id Local Network Access in
 # Chrome and Chromium. Re-run it at any time to upgrade the agent or to add the printer
 # after plugging it in.
 
