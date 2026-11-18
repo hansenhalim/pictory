@@ -2,7 +2,10 @@ import { defineStore } from 'pinia'
 import { useStorage } from '@vueuse/core'
 import { api } from '@/lib/api'
 
-const POOL_SIZE = 100
+const POOL_SIZE = 1000
+
+/** The most codes the backend reserves in one request. */
+const RESERVE_BATCH = 100
 
 /**
  * The soft copy URL behind a printed QR code. It is uppercase so the whole URL fits QR
@@ -21,13 +24,22 @@ export const useShortCodesStore = defineStore('shortCodes', () => {
 
   let topUpInFlight: Promise<void> | null = null
 
-  /** Reserve enough codes to fill the pool back up. */
+  /**
+   * Reserve enough codes to fill the pool back up, a batch at a time. Each batch is kept as
+   * it arrives, so a top-up cut off midway keeps the codes it already reserved.
+   */
   function topUp(): Promise<void> {
     topUpInFlight ??= (async () => {
-      const missing = POOL_SIZE - pool.value.length
+      let missing = POOL_SIZE - pool.value.length
 
-      if (missing > 0) {
-        pool.value = [...pool.value, ...(await api.reserveShortCodes(missing))]
+      while (missing > 0) {
+        const codes = await api.reserveShortCodes(Math.min(missing, RESERVE_BATCH))
+        if (codes.length === 0) {
+          return
+        }
+
+        pool.value = [...pool.value, ...codes]
+        missing = POOL_SIZE - pool.value.length
       }
     })().finally(() => (topUpInFlight = null))
 
