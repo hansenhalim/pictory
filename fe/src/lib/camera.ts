@@ -244,7 +244,12 @@ export class DslrCamera implements Camera {
   }
 
   async capture(): Promise<Blob> {
-    const file = await this.call((camera) => camera.captureImageAsFile())
+    // Events left from the last shot can point to the file it already took and deleted, so the
+    // next capture fails with "PTP Invalid Object Handle". They are cleared before each shot.
+    const file = await this.call(async (camera) => {
+      await camera.consumeEvents()
+      return camera.captureImageAsFile()
+    })
     const image = await createImageBitmap(file).catch(() => {
       throw new Error(
         `The camera sent ${file.name}, which is not a JPEG. Set it to shoot JPEG only.`,
