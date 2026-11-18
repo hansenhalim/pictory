@@ -68,8 +68,8 @@ install_agent() {
   systemctl restart pictory-agent
 }
 
-# Prefers Gutenprint's own USB backend over CUPS' generic one: it reports the sheets left on
-# the roll as marker levels, which the agent's /health passes on to the kiosk.
+# Prefers Gutenprint's own USB backend over CUPS' generic one: it reports the prints left in
+# the printer's marker message, which the agent's /health passes on to the kiosk.
 setup_printer() {
   if lpstat -p "$PRINTER" >/dev/null 2>&1; then
     say "CUPS printer $PRINTER already exists"
