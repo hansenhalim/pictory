@@ -7,7 +7,7 @@ const { variant = 'primary' } = defineProps<{
 <template>
   <button
     type="button"
-    class="rounded-lg px-10 py-4 text-2xl font-semibold transition active:scale-95 disabled:opacity-40"
+    class="rounded-full shadow-lg px-10 py-4 text-2xl font-semibold transition active:scale-95 disabled:opacity-40"
     :class="{
       'bg-neutral-50 text-neutral-950': variant === 'primary',
       'bg-neutral-800 text-neutral-100': variant === 'secondary',
