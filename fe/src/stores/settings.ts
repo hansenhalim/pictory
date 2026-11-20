@@ -20,6 +20,11 @@ export interface KioskSettings {
    * clips and papers always come out as the camera sees them.
    */
   mirrorPreview: boolean
+  /**
+   * Turn the DSLR's live view and clips 180°, for a camera mounted upside down. Its photos are
+   * left as taken, since the camera's orientation sensor already turns them upright.
+   */
+  rotateLiveView: boolean
   countdownSeconds: number
   /** Record the countdown before each photo as a behind-the-scenes clip for the operator. */
   recordClips: boolean
@@ -37,6 +42,7 @@ export const useSettingsStore = defineStore('settings', () => {
       cameraSource: 'webcam',
       cameraDeviceId: '',
       mirrorPreview: true,
+      rotateLiveView: false,
       countdownSeconds: 3,
       recordClips: true,
       agentUrl: 'http://127.0.0.1:8001',

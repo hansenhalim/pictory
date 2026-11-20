@@ -327,6 +327,17 @@ onMounted(() => {
           <span>Mirror the preview</span>
         </label>
 
+        <div v-if="settingsStore.settings.cameraSource === 'dslr'" class="space-y-1">
+          <label class="flex items-center gap-3">
+            <input v-model="settingsStore.settings.rotateLiveView" type="checkbox" class="size-5" />
+            <span>Camera is upside down</span>
+          </label>
+          <p class="text-sm text-neutral-400">
+            Turns the live view and clips 180°. Photos are left as taken, since the camera turns
+            them upright itself.
+          </p>
+        </div>
+
         <div class="space-y-1">
           <label class="flex items-center gap-3">
             <input v-model="settingsStore.settings.recordClips" type="checkbox" class="size-5" />
