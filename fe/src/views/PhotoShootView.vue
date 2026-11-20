@@ -32,6 +32,12 @@ const camera: Camera | null = isUpload
 
 /** A photographer's shot is shown as taken, never mirrored. */
 const isMirrored = settings.mirrorPreview && !isUpload
+
+/**
+ * An upside-down DSLR's live view is turned upright. Its photos already are, so the captured
+ * photo shown over it is not turned.
+ */
+const isLiveViewRotated = settings.rotateLiveView && settings.cameraSource === 'dslr'
 const video = useTemplateRef('video')
 
 /** Shooting waits for the camera, so the first photo and clip are not taken from an empty stream. */
@@ -129,7 +135,8 @@ async function start() {
   isCountingDown.value = true
   hasCaptureFailed.value = false
 
-  recorder = settings.recordClips && stream ? await ClipRecorder.start(stream) : null
+  recorder =
+    settings.recordClips && stream ? await ClipRecorder.start(stream, isLiveViewRotated) : null
 
   if (recorder) {
     isRecording.value = true
@@ -281,6 +288,7 @@ onBeforeUnmount(() => {
             muted
             playsinline
             class="absolute inset-0 size-full object-cover"
+            :class="{ 'rotate-180': isLiveViewRotated }"
           />
 
           <img

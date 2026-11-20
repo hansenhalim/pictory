@@ -49,8 +49,12 @@ export class ClipRecorder {
     })
   }
 
-  /** Start recording the stream's video, or return null when that is not possible. */
-  static async start(stream: MediaStream): Promise<ClipRecorder | null> {
+  /**
+   * Start recording the stream's video, or return null when that is not possible.
+   *
+   * @param isRotated Turn the video 180°, for a camera mounted upside down.
+   */
+  static async start(stream: MediaStream, isRotated = false): Promise<ClipRecorder | null> {
     const track = stream.getVideoTracks()[0]
 
     if (!track || !canRecordClips()) {
@@ -60,7 +64,7 @@ export class ClipRecorder {
     let source: ClipSource | null = null
 
     try {
-      source = await openClipSource(track)
+      source = await openClipSource(track, isRotated)
 
       const recorder = new MediaRecorder(source.stream, {
         mimeType: CLIP_TYPE,
@@ -91,10 +95,11 @@ export class ClipRecorder {
 /**
  * The track's video, fitted to the clip box. MediaRecorder encodes a camera's frames at their
  * full size even on a track scaled down with `applyConstraints`, so larger video is drawn onto
- * a canvas of the clip's size instead. A DSLR's live view is already smaller than the box.
+ * a canvas of the clip's size instead. A DSLR's live view is already smaller than the box, so
+ * it is only drawn onto a canvas when it is turned 180°.
  */
-async function openClipSource(track: MediaStreamTrack): Promise<ClipSource> {
-  if (fitScale(track.getSettings()) === 1) {
+async function openClipSource(track: MediaStreamTrack, isRotated: boolean): Promise<ClipSource> {
+  if (!isRotated && fitScale(track.getSettings()) === 1) {
     const copy = track.clone()
 
     return { stream: new MediaStream([copy]), close: () => copy.stop() }
@@ -112,6 +117,10 @@ async function openClipSource(track: MediaStreamTrack): Promise<ClipSource> {
   })
   const context = canvas.getContext('2d')!
   const stream = canvas.captureStream()
+
+  if (isRotated) {
+    context.setTransform(-1, 0, 0, -1, canvas.width, canvas.height)
+  }
 
   let isClosed = false
 
