@@ -88,7 +88,7 @@ function choose(frame: Frame) {
         <img
           :src="framesStore.image(frame.id)?.url"
           alt=""
-          class="w-auto rounded bg-white shadow-lg"
+          class="w-auto"
           :class="frameHeight"
           draggable="false"
         />

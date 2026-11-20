@@ -81,10 +81,10 @@ const visibleArea = computed(() => {
   }
 })
 
-/** The preview has the visible area's shape, as large as fits above the buttons. */
+/** The preview has the visible area's shape, as large as fits, with the buttons floating over it. */
 const viewportStyle = computed(() => ({
   aspectRatio: `${visibleArea.value.width} / ${visibleArea.value.height}`,
-  height: `min(78vh, calc(94vw * ${visibleArea.value.height / visibleArea.value.width}))`,
+  height: `min(94vh, calc(94vw * ${visibleArea.value.height / visibleArea.value.width}))`,
 }))
 
 /** The whole slot, shifted so its visible area lies exactly over the preview. */
@@ -269,8 +269,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="flex h-full flex-col items-center justify-center gap-[4vh] px-8 py-6">
-    <div class="relative overflow-hidden rounded bg-black" :style="viewportStyle">
+  <main class="relative flex h-full flex-col items-center justify-center px-8 py-6">
+    <div class="relative overflow-hidden" :style="viewportStyle">
       <!-- Mirrored frame and all, the captured photo too, so it does not jump when taken. -->
       <div class="absolute inset-0" :class="{ '-scale-x-100': isMirrored }">
         <div class="absolute" :style="photoStyle">
@@ -318,7 +318,7 @@ onBeforeUnmount(() => {
 
       <div
         v-if="isUpload && !captured && !sessionStore.isComplete"
-        class="absolute inset-0 flex items-center justify-center p-8 text-center text-3xl text-white drop-shadow-lg"
+        class="absolute inset-0 flex items-center justify-center p-8 text-center text-3xl text-neutral-50"
       >
         {{ copy.choosePhotoForSlot(slotIndex + 1, frame.slots.length) }}
       </div>
@@ -331,7 +331,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="flex min-h-20 items-center justify-center gap-4">
+    <div class="absolute inset-x-0 bottom-10 flex items-center justify-center gap-4">
       <p v-if="isFinishing" class="text-2xl text-neutral-400">{{ copy.processing }}</p>
 
       <template v-else-if="sessionStore.isComplete">
